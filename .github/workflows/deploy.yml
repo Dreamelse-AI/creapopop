@@ -1,0 +1,85 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'server.cjs'
+      - 'server/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - 'vite.config.ts'
+      - 'index.html'
+      - 'public/**'
+
+concurrency:
+  group: deploy-creapopop
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Rsync to server
+        run: |
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            "mkdir -p ${{ secrets.DEPLOY_PATH }}"
+
+          rsync -az --delete \
+            --exclude='node_modules/' \
+            --exclude='dist/' \
+            --exclude='.git/' \
+            --exclude='.cursor/' \
+            --exclude='.env' \
+            --exclude='.env.*' \
+            --exclude='secrets/' \
+            --exclude='.data/' \
+            --exclude='*.tsbuildinfo' \
+            --exclude='.DS_Store' \
+            ./ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/
+
+      - name: Build and restart container
+        env:
+          REMOTE: ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}
+          REMOTE_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          ssh $REMOTE bash -se <<EOF
+            set -euo pipefail
+            cd $REMOTE_PATH
+            docker compose build --no-cache
+            docker compose up -d
+            sleep 3
+            docker compose logs --tail=20
+          EOF
+
+      - name: Verify deployment
+        env:
+          REMOTE: ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}
+        run: |
+          HTTP_CODE=$(ssh $REMOTE "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:9528/health" || echo "000")
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "Deployment verified (HTTP 200)"
+          else
+            echo "::warning::Health check returned HTTP $HTTP_CODE"
+            ssh $REMOTE "docker logs creapopop --tail 20" || true
+            exit 1
+          fi
