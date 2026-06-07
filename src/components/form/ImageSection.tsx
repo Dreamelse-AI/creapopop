@@ -1,7 +1,8 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useDraftStore } from '@/store/draftStore'
 import { MAX_IMAGES } from '@/data/constants'
 import type { CharacterImage } from '@/types/character'
+import { generateImage, type ImageTaskStatus } from '@/services/aiImage'
 
 // 形象：本地上传（P0，转 dataURL 暂存）。AI 生图在 P1 接入。
 // 已上传图片构成虚拟形象库，可设为基础形象/删除。
@@ -9,6 +10,39 @@ export function ImageSection() {
   const data = useDraftStore((s) => s.data)!
   const patch = useDraftStore((s) => s.patch)
   const fileRef = useRef<HTMLInputElement>(null)
+  const [prompt, setPrompt] = useState('')
+  const [genStatus, setGenStatus] = useState<ImageTaskStatus | null>(null)
+  const [genError, setGenError] = useState<string | null>(null)
+
+  const generating = genStatus?.status === 'queued' || genStatus?.status === 'running'
+
+  const addImage = (url: string, source: CharacterImage['source']) => {
+    const img: CharacterImage = {
+      id: `img_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      url,
+      source,
+    }
+    const images = [...data.images, img]
+    patch({ images, primaryImageId: data.primaryImageId || img.id })
+  }
+
+  const runGenerate = async () => {
+    if (!prompt.trim() || generating || data.images.length >= MAX_IMAGES) return
+    setGenError(null)
+    const result = await generateImage({
+      prompt: prompt.trim(),
+      aspect: '9:16',
+      onUpdate: setGenStatus,
+    })
+    if (result.status === 'done' && result.imageUrl) {
+      addImage(result.imageUrl, 'ai')
+      setPrompt('')
+      setGenStatus(null)
+    } else {
+      setGenError(result.error || '生成失败')
+      setGenStatus(null)
+    }
+  }
 
   const onFiles = async (files: FileList | null) => {
     if (!files) return
@@ -81,7 +115,42 @@ export function ImageSection() {
         )}
       </div>
 
-      <p className="px-3 text-xs text-black/30">AI 生图将在 P1 接入。</p>
+      {/* AI 生图 */}
+      <div className="flex flex-col gap-2 rounded-[16px] border border-black/[0.06] bg-white p-3">
+        <span className="text-sm font-medium text-black/50">AI 生图</span>
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder="描述你想要的角色形象，如：银发少年，冷色调，半身像…"
+          rows={2}
+          disabled={generating}
+          className="w-full resize-none rounded-[12px] bg-[#f7f7f7] p-2.5 text-base outline-none placeholder:text-black/20 disabled:opacity-50"
+        />
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-black/30">
+            {generating
+              ? genStatus?.status === 'queued'
+                ? '排队中…'
+                : `生成中…${genStatus?.progress ? Math.round(genStatus.progress * 100) + '%' : ''}`
+              : `${data.images.length}/${MAX_IMAGES} 张`}
+          </span>
+          <button
+            onClick={runGenerate}
+            disabled={generating || !prompt.trim() || data.images.length >= MAX_IMAGES}
+            className="rounded-[100px] bg-black px-4 py-1.5 text-sm text-white disabled:opacity-40"
+          >
+            {generating ? '生成中…' : '生成'}
+          </button>
+        </div>
+        {genError && (
+          <div className="flex items-center justify-between rounded-[12px] bg-red-50 px-3 py-2">
+            <span className="text-sm text-red-500">{genError}</span>
+            <button onClick={runGenerate} className="text-sm text-red-500 underline">
+              重试
+            </button>
+          </div>
+        )}
+      </div>
 
       <input
         ref={fileRef}

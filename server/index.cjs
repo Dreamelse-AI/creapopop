@@ -4,7 +4,10 @@ const { sendJson } = require('./utils/body.cjs');
 const auth = require('./routes/auth.cjs');
 const character = require('./routes/character.cjs');
 const mock = require('./routes/mock.cjs');
+const ai = require('./routes/ai.cjs');
 const { serveStatic } = require('./static.cjs');
+
+const AI_IMAGE_TASK_RE = /^\/api\/ai\/image\/task\/([^/]+)$/;
 
 function dispatch(req, res) {
     applyCors(req, res);
@@ -35,9 +38,15 @@ function dispatch(req, res) {
     if (reqPath === '/api/mock/voices' && m === 'GET') return mock.handleVoices(req, res);
     if (reqPath === '/api/mock/music' && m === 'GET') return mock.handleMusic(req, res);
 
-    // AI 代理位（P1 接入：/api/ai/image、/api/ai/chat、/api/ai/intro-page）
+    // AI 能力（代理三类模型，key 在后端）
+    if (reqPath === '/api/ai/image/submit' && m === 'POST') return ai.handleImageSubmit(req, res);
+    {
+        const tm = reqPath.match(AI_IMAGE_TASK_RE);
+        if (tm && m === 'GET') return ai.handleImageTask(req, res, tm[1]);
+    }
+    if (reqPath === '/api/ai/intro-page' && m === 'POST') return ai.handleIntroPage(req, res);
     if (reqPath.startsWith('/api/ai/')) {
-        return sendJson(res, 501, { error: 'AI 能力将在 P1 接入' });
+        return sendJson(res, 501, { error: '该 AI 能力尚未接入' });
     }
 
     // 静态文件兜底（SPA）
