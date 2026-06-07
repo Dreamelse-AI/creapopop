@@ -1,0 +1,30 @@
+services:
+  creapopop:
+    build: .
+    image: creapopop:latest
+    container_name: creapopop
+    restart: unless-stopped
+    env_file: .env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+      - "traefik.http.routers.creapopop.rule=Host(`creapopop.imaginewithu.com`)"
+      - "traefik.http.routers.creapopop.entrypoints=web"
+      - "traefik.http.services.creapopop.loadbalancer.server.port=9527"
+
+    ports:
+      - "127.0.0.1:9528:9527"
+
+    volumes:
+      - ./secrets:/app/secrets:ro
+      - creapopop-data:/app/.data
+
+    networks:
+      - web
+
+volumes:
+  creapopop-data:
+
+networks:
+  web:
+    external: true

@@ -19,6 +19,7 @@ service-account.json
 logs/
 *.log
 .tmp-*/
+.data/
 
 # 系统
 .DS_Store
