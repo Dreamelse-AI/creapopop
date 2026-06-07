@@ -1,12 +1,21 @@
 @import 'tailwindcss';
 
-:root {
-  --color-bg: #0f0f12;
-  --color-surface: #1a1a20;
-  --color-border: #2a2a32;
-  --color-text: #e8e8ea;
-  --color-text-dim: #9a9aa5;
-  --color-accent: #7c6cff;
+/* 设计令牌 — 取自 Figma 设计稿（暖米色亮色主题，字体 MiSans）*/
+@theme {
+  --color-bg: #fbf2d8;
+  --color-surface: #ffffff;
+  --color-border: rgba(0, 0, 0, 0.06);
+  --color-text: #000000;
+  --color-text-60: rgba(0, 0, 0, 0.6);
+  --color-text-50: rgba(0, 0, 0, 0.5);
+  --color-text-20: rgba(0, 0, 0, 0.2);
+  --color-accent: #000000;
+
+  --radius-input: 24px;
+  --radius-pill: 100px;
+  --radius-card: 16px;
+
+  --spacing-field: 12px;
 }
 
 * {
@@ -22,11 +31,12 @@ body,
 
 body {
   font-family:
+    'MiSans',
     system-ui,
     -apple-system,
     'PingFang SC',
     'Microsoft YaHei',
     sans-serif;
   background: var(--color-bg);
-  color: #e8e8ea;
+  color: #000000;
 }

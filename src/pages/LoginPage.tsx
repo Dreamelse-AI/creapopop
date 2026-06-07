@@ -1,11 +1,14 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/features/auth/authStore'
+import { PillButton, RoundedInput } from '@/components/ui/primitives'
 
 interface LocationState {
   from?: string
 }
 
+// 登录页：暖米色背景 + 居中面板（390px）。
+// 设计稿为「邮箱 + 验证码」，这一期 mock：邮箱 + 密码(123456)，验证码后续接入。
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -23,42 +26,33 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex h-full items-center justify-center">
-      <form
-        onSubmit={handleSubmit}
-        className="w-[360px] rounded-2xl border border-[#2a2a32] bg-[#1a1a20] p-8"
-      >
-        <h1 className="mb-6 text-xl font-semibold">登录 POPOP 创作</h1>
+    <div className="flex h-full flex-col items-center justify-center gap-10 bg-[#fbf2d8] px-6">
+      <h1 className="text-3xl font-bold tracking-wide text-black">POPOP</h1>
 
-        <label className="mb-1 block text-sm text-[#9a9aa5]">邮箱</label>
-        <input
+      <form onSubmit={handleSubmit} className="flex w-[390px] flex-col gap-3 px-6 py-4">
+        <label className="px-2 text-sm text-black/50">📧 登录账号</label>
+        <RoundedInput
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
-          className="mb-4 w-full rounded-lg border border-[#2a2a32] bg-[#0f0f12] px-3 py-2 outline-none focus:border-[#7c6cff]"
+          placeholder="请输入你的电子邮箱..."
         />
 
-        <label className="mb-1 block text-sm text-[#9a9aa5]">密码</label>
-        <input
+        <label className="mt-2 px-2 text-sm text-black/50">🔒 密码</label>
+        <RoundedInput
           type="password"
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="默认 123456"
-          className="mb-4 w-full rounded-lg border border-[#2a2a32] bg-[#0f0f12] px-3 py-2 outline-none focus:border-[#7c6cff]"
+          placeholder="默认密码 123456"
         />
 
-        {error && <p className="mb-3 text-sm text-red-400">{error}</p>}
+        {error && <p className="px-2 text-sm text-red-500">{error}</p>}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-lg bg-[#7c6cff] py-2 font-medium text-white disabled:opacity-50"
-        >
+        <PillButton type="submit" disabled={loading} className="mt-4 h-[52px] w-full">
           {loading ? '登录中…' : '登录'}
-        </button>
+        </PillButton>
       </form>
     </div>
   )
