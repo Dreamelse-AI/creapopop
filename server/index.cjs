@@ -45,6 +45,7 @@ function dispatch(req, res) {
         if (tm && m === 'GET') return ai.handleImageTask(req, res, tm[1]);
     }
     if (reqPath === '/api/ai/intro-page' && m === 'POST') return ai.handleIntroPage(req, res);
+    if (reqPath === '/api/ai/chat' && m === 'POST') return ai.handleChat(req, res);
     if (reqPath.startsWith('/api/ai/')) {
         return sendJson(res, 501, { error: '该 AI 能力尚未接入' });
     }

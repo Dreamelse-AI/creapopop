@@ -14,6 +14,7 @@
 const { PORT } = require('./server/config.cjs');
 const { createServer } = require('./server/index.cjs');
 const { initStore } = require('./server/services/store.cjs');
+const { loadServiceAccount } = require('./server/services/googleAuth.cjs');
 
 process.on('uncaughtException', (err) => {
     console.error(`[Uncaught] ${err.stack || err.message}`);
@@ -24,6 +25,7 @@ process.on('unhandledRejection', (reason) => {
 });
 
 (async () => {
+    loadServiceAccount();
     await initStore();
     const server = createServer();
     server.listen(PORT, '0.0.0.0', () => {

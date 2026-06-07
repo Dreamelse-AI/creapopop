@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useDraftStore } from '@/store/draftStore'
 import { FieldCard, CharCount } from '@/components/form/FieldCard'
+import { listVoices } from '@/services/mockData'
 import {
   SPECIES_OPTIONS,
   GENDER_OPTIONS,
@@ -103,9 +105,9 @@ export function BasicInfoSection() {
         />
       </div>
 
-      {/* 音色（P0 占位，P1 接入 mock 库 + 试听） */}
+      {/* 音色（mock 库 + 选择） */}
       <FieldCard label="音色">
-        <span className="text-base text-black/30">请选择（P1 接入）</span>
+        <VoiceSelect value={data.voiceId} onChange={(id) => patch({ voiceId: id })} />
       </FieldCard>
 
       {/* 简介 */}
@@ -215,6 +217,33 @@ function SelectField<T extends string>({
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function VoiceSelect({
+  value,
+  onChange,
+}: {
+  value: string | null
+  onChange: (id: string) => void
+}) {
+  const { data, isLoading } = useQuery({ queryKey: ['voices'], queryFn: listVoices })
+  if (isLoading) return <span className="text-base text-black/30">加载音色…</span>
+  const voices = data?.voices ?? []
+  return (
+    <div className="flex flex-wrap gap-2">
+      {voices.map((v) => (
+        <button
+          key={v.id}
+          onClick={() => onChange(v.id)}
+          className={`flex items-center gap-1 rounded-[100px] px-3 py-1.5 text-sm ${
+            value === v.id ? 'bg-black text-white' : 'border border-black/15'
+          }`}
+        >
+          🔊 {v.name}
+        </button>
+      ))}
     </div>
   )
 }

@@ -45,5 +45,11 @@ module.exports = {
     SHARED_OR_API_KEY: process.env.SHARED_OR_API_KEY || '',
     SHARED_OR_MODEL: process.env.SHARED_OR_MODEL || 'google/gemini-2.5-flash',
 
+    // Gemini（聊天试聊）+ TTS
+    SA_KEY_PATH: process.env.GOOGLE_APPLICATION_CREDENTIALS || './secrets/service-account.json',
+    GOOGLE_API_PROXY: process.env.NLB_PROXY_URL || '',
+    AIGC_TARGET: process.env.AIGC_TARGET || '',
+    MAX_BODY_SIZE: 10 * 1024 * 1024,
+
     ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS || '',
 };

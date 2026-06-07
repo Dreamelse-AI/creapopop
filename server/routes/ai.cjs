@@ -18,6 +18,7 @@ const { URL } = require('url');
 const { readBody, sendJson } = require('../utils/body.cjs');
 const { resolveEmail } = require('../utils/auth.cjs');
 const { APIMART_API_BASE, APIMART_API_KEY } = require('../config.cjs');
+const { getGeminiAccessToken, getServiceAccount, getProxyAgent } = require('../services/googleAuth.cjs');
 
 const ANTHROPIC_VERSION = '2025-10-01';
 
@@ -95,4 +96,76 @@ async function handleIntroPage(req, res) {
     }
 }
 
-module.exports = { handleImageSubmit, handleImageTask, handleIntroPage };
+// POST /api/ai/chat → 角色试聊（Gemini generateContent，非流式，返回整段文本）
+// body: { messages: [{role, content}], system?, temperature? }
+async function handleChat(req, res) {
+    if (!resolveEmail(req, res)) return;
+    try {
+        const accessToken = await getGeminiAccessToken();
+        const sa = getServiceAccount();
+        if (!accessToken || !sa) {
+            return sendJson(res, 500, { error: 'Gemini 凭据不可用，请检查 service-account.json' });
+        }
+        const parsed = JSON.parse(await readBody(req));
+        const model = (parsed.model || 'gemini-2.5-flash').replace(/^google\//, '');
+        const host = 'us-central1-aiplatform.googleapis.com';
+        const path = `/v1beta1/projects/${sa.project_id}/locations/us-central1/publishers/google/models/${model}:generateContent`;
+
+        const sys = parsed.system || parsed.messages?.find((m) => m.role === 'system')?.content || '';
+        const vertexBody = JSON.stringify({
+            contents: (parsed.messages || [])
+                .filter((m) => m.role !== 'system')
+                .map((m) => ({
+                    role: m.role === 'assistant' ? 'model' : 'user',
+                    parts: [{ text: m.content }],
+                })),
+            systemInstruction: sys ? { parts: [{ text: sys }] } : undefined,
+            generationConfig: {
+                temperature: parsed.temperature ?? 0.8,
+                maxOutputTokens: parsed.max_tokens ?? 1024,
+            },
+        });
+
+        const opts = {
+            hostname: host,
+            path,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Length': Buffer.byteLength(vertexBody),
+            },
+            timeout: 60000,
+        };
+        const agent = getProxyAgent();
+        if (agent) opts.agent = agent;
+
+        const vReq = https.request(opts, (vRes) => {
+            let data = '';
+            vRes.on('data', (c) => (data += c));
+            vRes.on('end', () => {
+                if ((vRes.statusCode || 500) >= 400) {
+                    return sendJson(res, vRes.statusCode, { error: `Gemini ${vRes.statusCode}: ${data.slice(0, 200)}` });
+                }
+                try {
+                    const j = JSON.parse(data);
+                    const text = (j.candidates?.[0]?.content?.parts || [])
+                        .filter((p) => p.text)
+                        .map((p) => p.text)
+                        .join('');
+                    sendJson(res, 200, { text });
+                } catch {
+                    sendJson(res, 502, { error: 'Gemini 响应解析失败' });
+                }
+            });
+        });
+        vReq.on('error', (e) => sendJson(res, 502, { error: e.message }));
+        vReq.on('timeout', () => { vReq.destroy(); sendJson(res, 504, { error: 'Gemini 超时' }); });
+        vReq.write(vertexBody);
+        vReq.end();
+    } catch (e) {
+        sendJson(res, 500, { error: e.message });
+    }
+}
+
+module.exports = { handleImageSubmit, handleImageTask, handleIntroPage, handleChat };

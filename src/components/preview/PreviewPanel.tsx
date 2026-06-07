@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useDraftStore } from '@/store/draftStore'
 import { DETAIL_FIELDS } from '@/data/constants'
 import { SandboxHtml } from './SandboxHtml'
+import { sendChatMessage, type ChatMessage } from '@/services/aiChat'
 
 type PreviewTab = 'intro' | 'chat' | 'dynamics'
 
@@ -63,7 +64,7 @@ export function PreviewPanel() {
 
       <div className="flex-1 overflow-auto rounded-[20px] border border-black/[0.06] bg-white">
         {tab === 'intro' && <IntroPreview />}
-        {tab === 'chat' && <PlaceholderTab text="聊天页试聊将在 P1 接入" />}
+        {tab === 'chat' && <ChatPreview />}
         {tab === 'dynamics' && <PlaceholderTab text="动态页将在 P2 接入" />}
       </div>
     </div>
@@ -132,4 +133,72 @@ function IntroPreview() {
 
 function PlaceholderTab({ text }: { text: string }) {
   return <div className="flex h-full items-center justify-center text-sm text-black/40">{text}</div>
+}
+
+// 聊天试聊：用角色设定做 system prompt，与角色多轮对话（Gemini）
+function ChatPreview() {
+  const data = useDraftStore((s) => s.data)!
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const send = async () => {
+    const text = input.trim()
+    if (!text || loading) return
+    const next: ChatMessage[] = [...messages, { role: 'user', content: text }]
+    setMessages(next)
+    setInput('')
+    setLoading(true)
+    setError(null)
+    try {
+      const reply = await sendChatMessage(data, next)
+      setMessages([...next, { role: 'assistant', content: reply }])
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '对话失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex-1 space-y-3 overflow-auto p-4">
+        {messages.length === 0 && (
+          <p className="text-sm text-black/40">
+            和「{data.name || '未命名角色'}」试聊一下，验证人设效果。
+          </p>
+        )}
+        {messages.map((m, i) => (
+          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <span
+              className={`max-w-[80%] rounded-[16px] px-3 py-2 text-sm ${
+                m.role === 'user' ? 'bg-black text-white' : 'bg-black/5 text-black'
+              }`}
+            >
+              {m.content}
+            </span>
+          </div>
+        ))}
+        {loading && <p className="text-sm text-black/40">对方正在输入…</p>}
+        {error && <p className="text-sm text-red-500">{error}</p>}
+      </div>
+      <div className="flex items-center gap-2 border-t border-black/[0.06] p-3">
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && send()}
+          placeholder="说点什么…"
+          className="flex-1 rounded-[100px] bg-[#f7f7f7] px-3 py-2 text-sm outline-none"
+        />
+        <button
+          onClick={send}
+          disabled={loading || !input.trim()}
+          className="rounded-[100px] bg-black px-4 py-2 text-sm text-white disabled:opacity-40"
+        >
+          发送
+        </button>
+      </div>
+    </div>
+  )
 }
