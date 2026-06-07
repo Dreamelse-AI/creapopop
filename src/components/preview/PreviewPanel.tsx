@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useDraftStore } from '@/store/draftStore'
 import { DETAIL_FIELDS } from '@/data/constants'
+import { SandboxHtml } from './SandboxHtml'
 
 type PreviewTab = 'intro' | 'chat' | 'dynamics'
 
@@ -69,12 +70,16 @@ export function PreviewPanel() {
   )
 }
 
-// 静态介绍页预览：主图 + 名字 + 标签 + 简介 + 性格 + 选填细节
+// 静态介绍页预览：有 customHtml 走 iframe 沙箱，否则走模板渲染
 function IntroPreview() {
   const data = useDraftStore((s) => s.data)!
   const cover =
     data.images.find((i) => i.id === data.primaryImageId)?.url || data.images[0]?.url || ''
   const sections = data.introPage.visibleSections
+
+  if (data.introPage.customHtml) {
+    return <SandboxHtml html={data.introPage.customHtml} />
+  }
 
   return (
     <div className="flex flex-col">

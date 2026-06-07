@@ -8,9 +8,10 @@ import { BasicInfoSection } from '@/components/form/BasicInfoSection'
 import { ImageSection } from '@/components/form/ImageSection'
 import { DetailsSection } from '@/components/form/DetailsSection'
 import { GreetingsSection } from '@/components/form/GreetingsSection'
+import { IntroPageSection } from '@/components/form/IntroPageSection'
 import { PreviewPanel } from '@/components/preview/PreviewPanel'
 
-type SectionKey = 'basic' | 'image' | 'details' | 'greetings'
+type SectionKey = 'basic' | 'image' | 'details' | 'greetings' | 'introPage'
 
 const NAV_GROUPS: { title: string; items: { key: SectionKey; label: string; enabled: boolean }[] }[] = [
   {
@@ -21,6 +22,10 @@ const NAV_GROUPS: { title: string; items: { key: SectionKey; label: string; enab
       { key: 'details', label: '📓 更多细节', enabled: true },
       { key: 'greetings', label: '💬 开场白', enabled: true },
     ],
+  },
+  {
+    title: '角色美化',
+    items: [{ key: 'introPage', label: '🎨 介绍页美化', enabled: true }],
   },
 ]
 
@@ -105,7 +110,6 @@ export function CharacterFormPage() {
             ))}
           </div>
         ))}
-        <div className="px-7 py-4 text-xs text-black/30">介绍页美化 / 动态将在后续接入</div>
       </aside>
 
       {/* 中间表单区 */}
@@ -114,6 +118,7 @@ export function CharacterFormPage() {
         {active === 'image' && <ImageSection />}
         {active === 'details' && <DetailsSection />}
         {active === 'greetings' && <GreetingsSection />}
+        {active === 'introPage' && <IntroPageSection />}
       </main>
 
       {/* 右侧预览面板 */}
