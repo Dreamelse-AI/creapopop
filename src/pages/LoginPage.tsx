@@ -59,51 +59,55 @@ export function LoginPage() {
     <div className="flex h-full flex-col items-center justify-center gap-10 bg-[#fbf2d8] px-6">
       <img src="/logo.svg" alt="POPOP" className="h-[130px] w-[168px]" />
 
-      <form onSubmit={handleSubmit} className="flex w-[390px] flex-col gap-3 px-6 py-4">
-        <div className="flex w-[366px] flex-col gap-3">
-          <label className="px-2 text-sm font-medium text-black/50">📧 登录账号</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="请输入你的电子邮箱..."
-            className="h-[60px] w-full rounded-[24px] border border-black/[0.06] bg-white px-3 text-base text-black outline-none placeholder:text-black/20 focus:border-black/20"
-          />
-        </div>
-
-        <div className="flex w-[366px] flex-col gap-3">
-          <label className="px-2 text-sm font-medium text-black/50">🔒 邮箱验证码</label>
-          <div className="flex h-[60px] w-full items-center gap-2 rounded-[24px] border border-black/[0.06] bg-white pl-3 pr-2">
+      <form onSubmit={handleSubmit} className="flex flex-col items-center gap-10">
+        <div className="flex w-[390px] flex-col items-center justify-end gap-3 px-6 py-4">
+          <div className="flex w-[366px] flex-col gap-3">
+            <label className="px-2 text-sm font-medium text-black/50">📧 登录账号</label>
             <input
-              type="text"
-              inputMode="numeric"
+              type="email"
               required
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="请输入邮件验证码..."
-              className="h-full flex-1 bg-transparent text-base text-black outline-none placeholder:text-black/20"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="请输入你的电子邮箱..."
+              className="h-[60px] w-full rounded-[24px] border border-black/[0.06] bg-white px-3 text-base text-black outline-none placeholder:text-black/20 focus:border-black/20"
             />
-            <button
-              type="button"
-              onClick={handleSendCode}
-              disabled={!emailValid || countdown > 0 || sending}
-              className="shrink-0 rounded-[100px] border border-black px-3 py-2 text-base font-bold text-black transition disabled:opacity-20"
-            >
-              {countdown > 0 ? `${countdown}s` : sending ? '发送中' : '发送验证码'}
-            </button>
           </div>
+
+          <div className="flex w-[366px] flex-col gap-3">
+            <label className="px-2 text-sm font-medium text-black/50">🔒 邮箱验证码</label>
+            <div className="flex h-[60px] w-full items-center gap-2 rounded-[24px] border border-black/[0.06] bg-white pl-3 pr-2">
+              <input
+                type="text"
+                inputMode="numeric"
+                required
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="请输入邮件验证码..."
+                className="h-full flex-1 bg-transparent text-base text-black outline-none placeholder:text-black/20"
+              />
+              <button
+                type="button"
+                onClick={handleSendCode}
+                disabled={!emailValid || countdown > 0 || sending}
+                className="shrink-0 rounded-[100px] border border-black px-3 py-2 text-base font-bold text-black transition disabled:opacity-20"
+              >
+                {countdown > 0 ? `${countdown}s` : sending ? '发送中' : '发送验证码'}
+              </button>
+            </div>
+          </div>
+
+          {error && <p className="w-[366px] px-2 text-sm text-red-500">{error}</p>}
         </div>
 
-        {error && <p className="px-2 text-sm text-red-500">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={loading || !emailValid || !code}
-          className="mt-4 h-[52px] w-full rounded-[100px] bg-black text-base font-medium text-white transition hover:opacity-90 disabled:opacity-40"
-        >
-          {loading ? '登录中…' : '登录'}
-        </button>
+        <div className="flex w-[390px] items-end justify-center p-3">
+          <button
+            type="submit"
+            disabled={loading || !emailValid || !code}
+            className="flex h-[60px] flex-1 items-center justify-center rounded-[20px] bg-black px-5 py-4 text-[18px] font-semibold leading-6 text-white transition hover:opacity-90 disabled:opacity-40"
+          >
+            {loading ? '登录中…' : '登录'}
+          </button>
+        </div>
       </form>
     </div>
   )
