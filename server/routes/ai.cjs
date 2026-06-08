@@ -95,11 +95,13 @@ async function handleImageTask(req, res, taskId) {
 async function handleIntroPage(req, res) {
     if (!resolveEmail(req, res)) return;
     try {
-        const body = await readBody(req);
-        // 兜底默认 model，避免漏传导致 apimart 报错
-        if (body && !body.model) body.model = 'claude-sonnet-4-5-20250929';
-        if (body && !body.max_tokens) body.max_tokens = 4096;
-        const resp = await apimartRequest('POST', '/v1/messages', body, 'anthropic');
+        const raw = await readBody(req);
+        // readBody 返回原始字符串，需解析后补默认 model 再透传
+        let parsed = {};
+        try { parsed = raw ? JSON.parse(raw) : {}; } catch { parsed = {}; }
+        if (!parsed.model) parsed.model = 'claude-sonnet-4-5-20250929';
+        if (!parsed.max_tokens) parsed.max_tokens = 4096;
+        const resp = await apimartRequest('POST', '/v1/messages', JSON.stringify(parsed), 'anthropic');
         res.writeHead(resp.status, { 'Content-Type': 'application/json' });
         res.end(resp.body);
     } catch (e) {
