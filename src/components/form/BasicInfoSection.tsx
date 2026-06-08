@@ -186,7 +186,7 @@ function SelectCard<T extends string>({
             {current ? `${current.emoji} ${current.label}` : '请选择'}
           </span>
         </span>
-        <img src="/assets/icon-field-dropdown.svg" alt="" className="size-6 shrink-0" />
+        <img src="/assets/icon-arrow-right.svg" alt="" className="size-6 shrink-0 opacity-30" />
       </button>
       {open && (
         <div className="absolute z-20 mt-1 w-[175px] rounded-[20px] bg-white p-3 shadow-[0px_10px_30px_rgba(0,0,0,0.1)]">
@@ -247,7 +247,7 @@ function VoiceCard({ value, onChange }: { value: string | null; onChange: (id: s
             {current ? current.name : '请选择'}
           </span>
         </span>
-        <img src="/assets/icon-field-dropdown.svg" alt="" className="size-6 shrink-0" />
+        <img src="/assets/icon-arrow-right.svg" alt="" className="size-6 shrink-0 opacity-30" />
       </button>
       {open && (
         <div className="absolute z-20 mt-1 max-h-[260px] w-full overflow-auto rounded-[16px] border border-black/[0.06] bg-white p-2 shadow-lg">
@@ -330,8 +330,8 @@ function AnonymousCard({ tags, onChange }: { tags: string[]; onChange: (t: strin
               placeholder="请输入标签短语"
               className="font-misans-medium flex-1 bg-transparent text-[16px] text-black outline-none placeholder:text-black/20"
             />
-            <button onClick={add} className="size-6 shrink-0 text-black/40">
-              +
+            <button onClick={add} className="size-6 shrink-0" title="添加">
+              <img src="/assets/icon-plus.svg" alt="添加" className="size-full" />
             </button>
           </div>
         )}
@@ -359,7 +359,7 @@ function VisibilityCard({
           {value === 'private' ? '私密' : '公开'}
         </span>
       </span>
-      <img src="/assets/icon-field-dropdown.svg" alt="" className="size-6 shrink-0" />
+      <img src="/assets/icon-arrow-right.svg" alt="" className="size-6 shrink-0 opacity-30" />
     </button>
   )
 }

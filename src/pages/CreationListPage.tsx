@@ -54,7 +54,7 @@ export function CreationListPage() {
     <div className="flex h-full flex-col bg-[#f7f7f7]">
       <TopNav />
 
-      <main className="mx-auto w-full max-w-[1512px] flex-1 overflow-auto p-8">
+      <main className="flex-1 overflow-auto px-5 pb-8 pt-2">
         {isLoading && <CenterHint text="加载中…" />}
 
         {isError && (
@@ -92,10 +92,10 @@ export function CreationListPage() {
         )}
 
         {!isLoading && !isError && !isEmpty && (
-          <div className="mx-auto flex w-full max-w-[1512px] flex-col gap-12">
+          <div className="flex w-full max-w-[1512px] flex-col gap-12">
             <section className="flex flex-col gap-2">
               <div className="flex items-center p-3">
-                <h2 className="text-base font-semibold text-black/30">
+                <h2 className="font-misans-semibold text-[16px] text-black/30">
                   草稿箱 {draftList.length}
                 </h2>
               </div>
@@ -106,7 +106,7 @@ export function CreationListPage() {
                   className="flex h-[268px] w-[358px] shrink-0 flex-col items-center justify-center gap-2 rounded-[20px] border border-dashed border-black/15 bg-white/60 text-black/40 transition hover:bg-white disabled:opacity-50"
                 >
                   <span className="text-4xl font-light">+</span>
-                  <span className="text-base">{createMut.isPending ? '创建中…' : '新建角色'}</span>
+                  <span className="font-misans text-[16px]">{createMut.isPending ? '创建中…' : '新建角色'}</span>
                 </button>
                 {draftList.map((c) => (
                   <CharacterCard
@@ -123,12 +123,12 @@ export function CreationListPage() {
 
             <section className="flex flex-col gap-2">
               <div className="flex h-[45px] items-center p-3">
-                <h2 className="text-base font-semibold text-black/30">
+                <h2 className="font-misans-semibold text-[16px] text-black/30">
                   已发布 {publishedList.length}
                 </h2>
               </div>
               {publishedList.length === 0 ? (
-                <p className="px-3 text-sm text-black/30">还没有发布的角色</p>
+                <p className="font-misans px-3 text-[14px] text-black/30">还没有发布的角色</p>
               ) : (
                 <div className="flex flex-wrap items-center gap-4">
                   {publishedList.map((c) => (

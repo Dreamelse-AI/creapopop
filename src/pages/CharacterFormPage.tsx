@@ -82,10 +82,10 @@ export function CharacterFormPage() {
       <aside className="flex h-full w-[204px] shrink-0 flex-col border-r border-black/[0.06] bg-white">
         <div className="flex items-center gap-1 p-4 shadow-[inset_0px_-1px_0px_0px_rgba(0,0,0,0.06)]">
           <button onClick={() => navigate('/')} className="flex size-9 items-center justify-center" title="返回">
-            <img src="/assets/icon-back.svg" alt="返回" className="h-3.5 w-2" />
+            <img src="/assets/icon-back.svg" alt="返回" className="h-2 w-3.5 -rotate-90" />
           </button>
           <div className="flex flex-1 flex-col gap-1">
-            <span className="truncate text-base text-black">{data.name || '未命名角色'}</span>
+            <span className="font-misans truncate text-[16px] text-black">{data.name || '未命名角色'}</span>
             <SaveIndicator status={saveStatus} />
           </div>
           <button onClick={handleDelete} className="size-6" title="删除">
