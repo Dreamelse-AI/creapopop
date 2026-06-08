@@ -53,8 +53,8 @@ export function IntroPageSection() {
       </div>
 
       {/* UI 模版 */}
-      <div className="flex flex-col gap-2 rounded-[16px] border border-black/[0.06] bg-white p-3">
-        <span className="text-sm font-medium text-black/50">UI 模版</span>
+      <div className="flex flex-col gap-2 rounded-[20px] border border-black/[0.06] bg-white p-3">
+        <span className="text-base font-medium text-black/50">UI 模版</span>
         <div className="flex gap-2">
           {TEMPLATES.map((t) => (
             <button
@@ -71,8 +71,8 @@ export function IntroPageSection() {
       </div>
 
       {/* agent 对话生成（Claude） */}
-      <div className="flex flex-col gap-2 rounded-[16px] border border-black/[0.06] bg-white p-3">
-        <span className="text-sm font-medium text-black/50">AI 生成介绍页（描述想要的风格）</span>
+      <div className="flex flex-col gap-2 rounded-[20px] border border-black/[0.06] bg-white p-3">
+        <span className="text-base font-medium text-black/50">AI 生成介绍页（描述想要的风格）</span>
         <textarea
           value={vibe}
           onChange={(e) => setVibe(e.target.value)}
@@ -115,8 +115,8 @@ export function IntroPageSection() {
       </div>
 
       {/* 选择展示内容 */}
-      <div className="flex flex-col gap-2 rounded-[16px] border border-black/[0.06] bg-white p-3">
-        <span className="text-sm font-medium text-black/50">选择展示内容</span>
+      <div className="flex flex-col gap-2 rounded-[20px] border border-black/[0.06] bg-white p-3">
+        <span className="text-base font-medium text-black/50">选择展示内容</span>
         <div className="flex flex-wrap gap-2">
           {INTRO_SECTIONS.map((s) => {
             const active = introPage.visibleSections.includes(s.key)

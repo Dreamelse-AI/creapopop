@@ -11,6 +11,7 @@ export function ImageSection() {
   const patch = useDraftStore((s) => s.patch)
   const fileRef = useRef<HTMLInputElement>(null)
   const [prompt, setPrompt] = useState('')
+  const [aiOpen, setAiOpen] = useState(false)
   const [genStatus, setGenStatus] = useState<ImageTaskStatus | null>(null)
   const [genError, setGenError] = useState<string | null>(null)
 
@@ -38,6 +39,7 @@ export function ImageSection() {
       addImage(result.imageUrl, 'ai')
       setPrompt('')
       setGenStatus(null)
+      setAiOpen(false)
     } else {
       setGenError(result.error || '生成失败')
       setGenStatus(null)
@@ -70,87 +72,118 @@ export function ImageSection() {
   }
 
   return (
-    <div className="flex w-[600px] flex-col gap-3">
-      <div className="px-3 py-1.5">
-        <h2 className="text-base font-semibold text-black/30">角色形象（必填）</h2>
+    <div className="flex w-[600px] flex-col gap-4">
+      <div className="flex flex-col gap-0.5 px-3 py-1.5">
+        <h2 className="text-base font-semibold text-black/30">角色形象</h2>
+        <p className="text-sm font-medium text-black/30">
+          上传的图片不会直接对用户可见，图片打完标签后将在角色日常中被使用。
+        </p>
       </div>
 
-      {data.images.length === 0 && (
-        <p className="px-3 text-sm text-black/40">上传角色形象图，至少一张。最多 {MAX_IMAGES} 张。</p>
-      )}
+      <div className="flex flex-wrap content-start gap-2">
+        {/* 上传 / 生成入口 */}
+        {data.images.length < MAX_IMAGES && (
+          <div className="flex size-[138px] shrink-0 flex-col gap-2">
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="flex flex-1 items-center justify-center rounded-[20px] border border-black/[0.06] bg-black/[0.03] text-black/30 hover:bg-black/[0.06]"
+              title="上传图片"
+            >
+              <span className="text-2xl font-light">+</span>
+            </button>
+          </div>
+        )}
 
-      <div className="grid grid-cols-3 gap-3">
         {data.images.map((img) => {
           const isPrimary = img.id === data.primaryImageId
           return (
             <div
               key={img.id}
-              className={`relative aspect-square overflow-hidden rounded-[16px] border-2 ${
-                isPrimary ? 'border-black' : 'border-transparent'
-              }`}
+              className="group relative size-[138px] shrink-0 overflow-hidden rounded-[20px] border border-black/[0.06]"
             >
-              <img src={img.url} alt="" className="h-full w-full object-cover" />
-              <div className="absolute inset-x-0 bottom-0 flex justify-between bg-black/40 px-2 py-1">
-                <button
-                  onClick={() => patch({ primaryImageId: img.id })}
-                  className="text-xs text-white"
-                >
-                  {isPrimary ? '基础形象' : '设为基础'}
-                </button>
-                <button onClick={() => remove(img.id)} className="text-xs text-white">
+              <img src={img.url} alt="" className="size-full object-cover" />
+              {isPrimary && (
+                <span className="absolute right-1 top-1 rounded-[100px] bg-[rgba(48,48,48,0.9)] px-2 py-1 text-xs font-bold text-white">
+                  基本图像
+                </span>
+              )}
+              <div className="absolute inset-x-0 bottom-0 flex justify-between bg-black/40 px-2 py-1 opacity-0 transition group-hover:opacity-100">
+                {!isPrimary && (
+                  <button
+                    onClick={() => patch({ primaryImageId: img.id })}
+                    className="text-xs text-white"
+                  >
+                    设为基础
+                  </button>
+                )}
+                <button onClick={() => remove(img.id)} className="ml-auto text-xs text-white">
                   删除
                 </button>
               </div>
             </div>
           )
         })}
-
-        {data.images.length < MAX_IMAGES && (
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="flex aspect-square items-center justify-center rounded-[16px] border border-dashed border-black/20 text-black/40 hover:bg-black/5"
-          >
-            + 上传
-          </button>
-        )}
       </div>
 
-      {/* AI 生图 */}
-      <div className="flex flex-col gap-2 rounded-[16px] border border-black/[0.06] bg-white p-3">
-        <span className="text-sm font-medium text-black/50">AI 生图</span>
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="描述你想要的角色形象，如：银发少年，冷色调，半身像…"
-          rows={2}
-          disabled={generating}
-          className="w-full resize-none rounded-[12px] bg-[#f7f7f7] p-2.5 text-base outline-none placeholder:text-black/20 disabled:opacity-50"
-        />
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-black/30">
-            {generating
-              ? genStatus?.status === 'queued'
-                ? '排队中…'
-                : `生成中…${genStatus?.progress ? Math.round(genStatus.progress * 100) + '%' : ''}`
-              : `${data.images.length}/${MAX_IMAGES} 张`}
-          </span>
-          <button
-            onClick={runGenerate}
-            disabled={generating || !prompt.trim() || data.images.length >= MAX_IMAGES}
-            className="rounded-[100px] bg-black px-4 py-1.5 text-sm text-white disabled:opacity-40"
-          >
-            {generating ? '生成中…' : '生成'}
-          </button>
-        </div>
-        {genError && (
-          <div className="flex items-center justify-between rounded-[12px] bg-red-50 px-3 py-2">
-            <span className="text-sm text-red-500">{genError}</span>
-            <button onClick={runGenerate} className="text-sm text-red-500 underline">
-              重试
-            </button>
+      {/* AI 生图入口按钮 */}
+      <button
+        onClick={() => setAiOpen(true)}
+        disabled={data.images.length >= MAX_IMAGES}
+        className="flex h-[60px] items-center justify-center gap-1 rounded-[20px] bg-black text-[18px] font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
+      >
+        ✨ AI 生图
+      </button>
+
+      {/* AI 生图弹窗 */}
+      {aiOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 py-10">
+          <div className="flex w-[422px] flex-col rounded-[30px] bg-[#f7f7f7] py-4">
+            <div className="flex items-start justify-between px-4 py-2">
+              <p className="text-2xl font-black text-black">AI生图</p>
+              <button onClick={() => setAiOpen(false)} className="text-2xl leading-none text-black/40">
+                ×
+              </button>
+            </div>
+            <div className="flex h-[400px] flex-col px-4 py-2">
+              <div className="flex flex-1 flex-col gap-3 rounded-[20px] border border-black/[0.06] bg-white px-4 pb-4 pt-3">
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="输入角色形象描述"
+                  disabled={generating}
+                  className="flex-1 resize-none bg-transparent text-base text-black outline-none placeholder:text-black/20 disabled:opacity-50"
+                />
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-black/30">
+                    {generating
+                      ? genStatus?.status === 'queued'
+                        ? '排队中…'
+                        : `生成中…${genStatus?.progress ? Math.round(genStatus.progress * 100) + '%' : ''}`
+                      : `${data.images.length}/${MAX_IMAGES}`}
+                  </span>
+                </div>
+                {genError && (
+                  <div className="flex items-center justify-between rounded-[12px] bg-red-50 px-3 py-2">
+                    <span className="text-sm text-red-500">{genError}</span>
+                    <button onClick={runGenerate} className="text-sm text-red-500 underline">
+                      重试
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="flex items-end justify-center p-3">
+                <button
+                  onClick={runGenerate}
+                  disabled={generating || !prompt.trim() || data.images.length >= MAX_IMAGES}
+                  className="flex h-[60px] flex-1 items-center justify-center rounded-[20px] bg-black text-[18px] font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
+                >
+                  {generating ? '生成中…' : '生成'}
+                </button>
+              </div>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <input
         ref={fileRef}
