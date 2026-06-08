@@ -16,17 +16,17 @@ export const MAX_PERSONALITY_LEN = 200
 export const MAX_IMAGES = 9
 
 export const SPECIES_OPTIONS = [
-  { value: 'human', label: '人类' },
-  { value: 'elf', label: '精灵' },
-  { value: 'beast', label: '兽人' },
-  { value: 'animal', label: '动物' },
-  { value: 'other', label: '其他' },
+  { value: 'human', label: '人类', emoji: '☺️' },
+  { value: 'elf', label: '精灵', emoji: '🧚' },
+  { value: 'beast', label: '兽人', emoji: '🐱' },
+  { value: 'animal', label: '动物', emoji: '🐶' },
+  { value: 'other', label: '其他', emoji: '👾' },
 ] as const
 
 export const GENDER_OPTIONS = [
-  { value: 'male', label: '男' },
-  { value: 'female', label: '女' },
-  { value: 'unknown', label: '未知' },
+  { value: 'male', label: '男', emoji: '👦' },
+  { value: 'female', label: '女', emoji: '👧' },
+  { value: 'unknown', label: '未知', emoji: '❓' },
 ] as const
 
 // 更多细节字段（来自框架图）
