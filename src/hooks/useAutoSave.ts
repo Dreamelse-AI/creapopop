@@ -46,6 +46,8 @@ export function useAutoSave() {
 
 // 去掉每次都会变的字段，避免无意义保存
 function stripVolatile(data: Character) {
-  const { updatedAt: _u, createdAt: _c, ...rest } = data
+  const rest = { ...data }
+  delete (rest as Partial<Character>).updatedAt
+  delete (rest as Partial<Character>).createdAt
   return rest
 }

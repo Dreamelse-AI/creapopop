@@ -47,7 +47,7 @@ module.exports = {
 
     // Gemini（聊天试聊）+ TTS
     SA_KEY_PATH: process.env.GOOGLE_APPLICATION_CREDENTIALS || './secrets/service-account.json',
-    GOOGLE_API_PROXY: process.env.NLB_PROXY_URL || '',
+    GOOGLE_API_PROXY: process.env.GOOGLE_API_PROXY || process.env.NLB_PROXY_URL || '',
     AIGC_TARGET: process.env.AIGC_TARGET || '',
     MAX_BODY_SIZE: 10 * 1024 * 1024,
 

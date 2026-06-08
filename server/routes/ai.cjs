@@ -17,10 +17,17 @@ const https = require('https');
 const { URL } = require('url');
 const { readBody, sendJson } = require('../utils/body.cjs');
 const { resolveEmail } = require('../utils/auth.cjs');
-const { APIMART_API_BASE, APIMART_API_KEY } = require('../config.cjs');
+const { APIMART_API_BASE, APIMART_API_KEY, GOOGLE_API_PROXY } = require('../config.cjs');
 const { getGeminiAccessToken, getServiceAccount, getProxyAgent } = require('../services/googleAuth.cjs');
 
 const ANTHROPIC_VERSION = '2025-10-01';
+
+// 国内服务器直连 apimart 海外域名会超时，需经代理（与 Gemini 同一个 NLB 代理）
+let _apimartAgent = null;
+if (GOOGLE_API_PROXY) {
+    const { HttpsProxyAgent } = require('https-proxy-agent');
+    _apimartAgent = new HttpsProxyAgent(GOOGLE_API_PROXY);
+}
 
 function apimartRequest(method, pathSuffix, body, authMode = 'bearer') {
     return new Promise((resolve, reject) => {
@@ -41,6 +48,7 @@ function apimartRequest(method, pathSuffix, body, authMode = 'bearer') {
                 method,
                 headers,
                 timeout: 120000,
+                agent: _apimartAgent || undefined,
             },
             (resp) => {
                 let data = '';

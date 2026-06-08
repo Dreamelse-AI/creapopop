@@ -1,18 +1,22 @@
 # ── Stage 1: Build ──
 FROM node:22-alpine AS builder
-RUN corepack enable && corepack prepare pnpm@latest --activate
+ENV CI=true
+RUN corepack enable
 WORKDIR /build
 COPY package.json pnpm-lock.yaml .npmrc ./
+# corepack 依据 package.json 的 packageManager 字段锁定 pnpm 版本
+RUN corepack prepare --activate
 RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build
 
 # ── Stage 2: Runtime ──
 FROM node:22-alpine
+ENV CI=true
 WORKDIR /app
 
 COPY --from=builder /build/package.json /build/pnpm-lock.yaml /build/.npmrc ./
-RUN corepack enable && corepack prepare pnpm@latest --activate \
+RUN corepack enable && corepack prepare --activate \
     && pnpm install --prod --frozen-lockfile \
     && rm -rf /root/.local/share/pnpm/store
 COPY --from=builder /build/dist ./dist
