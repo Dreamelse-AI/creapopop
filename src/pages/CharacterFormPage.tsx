@@ -11,7 +11,7 @@ import { GreetingsSection } from '@/components/form/GreetingsSection'
 import { IntroPageSection } from '@/components/form/IntroPageSection'
 import { PreviewPanel } from '@/components/preview/PreviewPanel'
 
-type SectionKey = 'basic' | 'image' | 'details' | 'greetings' | 'introPage'
+type SectionKey = 'basic' | 'image' | 'details' | 'greetings' | 'introPage' | 'dynamic'
 
 const NAV_GROUPS: { title: string; items: { key: SectionKey; label: string; enabled: boolean }[] }[] = [
   {
@@ -26,6 +26,13 @@ const NAV_GROUPS: { title: string; items: { key: SectionKey; label: string; enab
   {
     title: '角色美化',
     items: [{ key: 'introPage', label: '🎨 介绍页美化', enabled: true }],
+  },
+  {
+    title: '角色发帖',
+    items: [
+      { key: 'dynamic', label: '💭 新建动态', enabled: true },
+      { key: 'dynamic', label: '💬 历史动态', enabled: false },
+    ],
   },
 ]
 
@@ -72,40 +79,40 @@ export function CharacterFormPage() {
   return (
     <div className="flex h-full bg-[#f7f7f7]">
       {/* 左侧导航 204px */}
-      <aside className="flex h-full w-[204px] flex-col border-r border-black/[0.06] bg-white">
-        <div className="flex items-center gap-1 border-b border-black/[0.06] p-4">
-          <button onClick={() => navigate('/')} className="text-black/60" title="返回">
-            ‹
+      <aside className="flex h-full w-[204px] shrink-0 flex-col border-r border-black/[0.06] bg-white">
+        <div className="flex items-center gap-1 p-4 shadow-[inset_0px_-1px_0px_0px_rgba(0,0,0,0.06)]">
+          <button onClick={() => navigate('/')} className="flex size-9 items-center justify-center" title="返回">
+            <img src="/assets/icon-back.svg" alt="返回" className="h-3.5 w-2" />
           </button>
-          <div className="flex flex-1 flex-col">
-            <span className="truncate text-base">{data.name || '未命名角色'}</span>
+          <div className="flex flex-1 flex-col gap-1">
+            <span className="truncate text-base text-black">{data.name || '未命名角色'}</span>
             <SaveIndicator status={saveStatus} />
           </div>
-          <button onClick={handleDelete} className="text-black/40 hover:text-black" title="删除">
-            🗑
+          <button onClick={handleDelete} className="size-6" title="删除">
+            <img src="/assets/icon-delete-dark.svg" alt="删除" className="size-full" />
           </button>
         </div>
         {NAV_GROUPS.map((group) => (
-          <div key={group.title} className="border-b border-black/[0.06] py-4">
-            <p className="px-7 py-2 text-sm font-semibold text-black/30">{group.title}</p>
+          <div
+            key={group.title}
+            className="flex flex-col py-4 shadow-[inset_0px_-1px_0px_0px_rgba(0,0,0,0.06)]"
+          >
+            <div className="px-4">
+              <p className="p-3 text-sm font-semibold text-black/30">{group.title}</p>
+            </div>
             {group.items.map((item) => (
               <button
-                key={item.key}
+                key={`${item.key}-${item.label}`}
                 onClick={() => item.enabled && setActive(item.key)}
                 disabled={!item.enabled}
-                className={`flex h-[60px] w-full items-center px-10 text-base ${
-                  active === item.key ? 'font-medium' : ''
-                } ${item.enabled ? '' : 'opacity-30'}`}
+                className={`relative flex h-[60px] w-full items-center px-10 text-base ${
+                  item.enabled ? '' : 'opacity-30'
+                }`}
               >
-                <span
-                  className={
-                    active === item.key
-                      ? 'rounded-[100px] bg-black/[0.03] px-3 py-1.5'
-                      : 'px-3 py-1.5'
-                  }
-                >
-                  {item.label}
-                </span>
+                {active === item.key && (
+                  <span className="absolute left-2 right-2 top-2 h-11 rounded-[100px] bg-black/[0.03]" />
+                )}
+                <span className="relative text-black">{item.label}</span>
               </button>
             ))}
           </div>
@@ -119,6 +126,11 @@ export function CharacterFormPage() {
         {active === 'details' && <DetailsSection />}
         {active === 'greetings' && <GreetingsSection />}
         {active === 'introPage' && <IntroPageSection />}
+        {active === 'dynamic' && (
+          <div className="flex w-[600px] items-center justify-center pt-20 text-black/30">
+            角色动态功能即将上线
+          </div>
+        )}
       </main>
 
       {/* 右侧预览面板 */}
