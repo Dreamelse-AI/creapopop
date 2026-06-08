@@ -189,19 +189,19 @@ function SelectCard<T extends string>({
         <img src="/assets/icon-arrow-right.svg" alt="" className="size-6 shrink-0 opacity-30" />
       </button>
       {open && (
-        <div className="absolute z-20 mt-1 w-[175px] rounded-[20px] bg-white p-3 shadow-[0px_10px_30px_rgba(0,0,0,0.1)]">
+        <div className="absolute z-20 mt-1 flex min-w-[175px] flex-col rounded-[20px] bg-white px-4 py-3 shadow-[0px_10px_30px_rgba(0,0,0,0.1)]">
           {options.map((o, i) => (
-            <div key={o.value}>
-              {i > 0 && <div className="mx-auto h-px w-full bg-black/10" />}
+            <div key={o.value} className="flex flex-col">
+              {i > 0 && <div className="h-px w-full bg-black/10" />}
               <button
                 onClick={() => {
                   onChange(o.value)
                   setOpen(false)
                 }}
-                className="font-misans-heavy flex h-10 w-full items-center gap-2 rounded-[12px] py-1.5 text-black"
+                className="font-misans-heavy flex h-[52px] w-full items-center gap-3 text-black"
               >
-                <span className="text-[24px]">{o.emoji}</span>
-                <span className="text-[16px]">{o.label}</span>
+                <span className="text-[24px] leading-none">{o.emoji}</span>
+                <span className="whitespace-nowrap text-[16px]">{o.label}</span>
               </button>
             </div>
           ))}

@@ -19,20 +19,9 @@ export function PreviewPanel() {
   const [tab, setTab] = useState<PreviewTab>('intro')
 
   return (
-    <div className="flex h-full">
-      {/* 预览区：直接填充，移动端比例(390:844)自适应，无手机外壳 */}
-      {!collapsed && (
-        <div className="flex h-full min-w-[360px] flex-1 items-stretch justify-center overflow-hidden">
-          <div className="aspect-[390/844] h-full overflow-hidden">
-            {tab === 'intro' && <IntroPreview />}
-            {tab === 'chat' && <ChatPreview />}
-            {tab === 'dynamics' && <PlaceholderTab text="动态页将在 P2 接入" />}
-          </div>
-        </div>
-      )}
-
-      {/* 右侧竖向 rail（始终显示） */}
-      <div className="flex h-full flex-col items-center gap-2 p-4">
+    <div className="relative flex h-full justify-end">
+      {/* 右侧竖向 rail（悬浮在预览区左侧） */}
+      <div className="z-10 flex h-full flex-col items-center gap-2 p-4">
         {/* 收起/展开按钮：未选中(收起态)30%，选中(展开态)100% */}
         <button
           onClick={() => setCollapsed((v) => !v)}
@@ -70,6 +59,17 @@ export function PreviewPanel() {
           })}
         </div>
       </div>
+
+      {/* 预览区：贴右侧边，移动端比例(390:844)自适应，无手机外壳 */}
+      {!collapsed && (
+        <div className="flex h-full items-stretch overflow-hidden">
+          <div className="aspect-[390/844] h-full overflow-hidden">
+            {tab === 'intro' && <IntroPreview />}
+            {tab === 'chat' && <ChatPreview />}
+            {tab === 'dynamics' && <PlaceholderTab text="动态页将在 P2 接入" />}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -187,7 +187,7 @@ function ChatPreview() {
             <div key={i} className="flex items-start gap-2 px-4">
               <Avatar cover={cover} />
               <div className="relative max-w-[240px]">
-                <div className="rounded-[24px] bg-white px-4 py-2.5">
+                <div className="rounded-[24px] rounded-bl-[4px] bg-white px-4 py-2.5">
                   <p className="font-misans-medium text-[16px] leading-[22px] text-black/90">
                     {m.content}
                   </p>
@@ -195,14 +195,14 @@ function ChatPreview() {
                 <img
                   src="/assets/chat-tail-white.svg"
                   alt=""
-                  className="absolute -bottom-[2px] left-0 h-[8.5px] w-[18.75px]"
+                  className="absolute bottom-0 left-0 h-[8.5px] w-[18.75px]"
                 />
               </div>
             </div>
           ) : (
             <div key={i} className="flex justify-end px-4">
               <div className="relative max-w-[240px]">
-                <div className="rounded-[24px] bg-[#fdeab3] px-4 py-2.5">
+                <div className="rounded-[24px] rounded-br-[4px] bg-[#fdeab3] px-4 py-2.5">
                   <p className="font-misans-medium text-[16px] leading-[22px] text-black/90">
                     {m.content}
                   </p>
@@ -210,7 +210,7 @@ function ChatPreview() {
                 <img
                   src="/assets/chat-tail-yellow.svg"
                   alt=""
-                  className="absolute -bottom-[2px] right-0 h-[8.5px] w-[18.75px] -scale-x-100"
+                  className="absolute bottom-0 right-0 h-[8.5px] w-[18.75px] -scale-x-100"
                 />
               </div>
             </div>
@@ -229,7 +229,7 @@ function ChatPreview() {
       {/* 底部输入栏：mic + 输入 + 发送 */}
       <div className="px-4 py-2">
         <div className="flex h-[60px] items-center gap-2 rounded-[24px] bg-white px-[18px]">
-          <img src="/assets/chat-mic.svg" alt="语音" className="size-6 shrink-0 opacity-60" />
+          <img src="/assets/chat-mic.svg" alt="语音" className="size-6 shrink-0 opacity-20" />
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -237,8 +237,16 @@ function ChatPreview() {
             placeholder="说点什么…"
             className="flex-1 bg-transparent font-misans-medium text-[16px] text-black outline-none placeholder:text-black/20"
           />
-          <button onClick={send} disabled={loading || !input.trim()} className="shrink-0 disabled:opacity-40">
-            <img src="/assets/chat-send.svg" alt="发送" className="size-6" />
+          <button
+            onClick={send}
+            disabled={loading || !input.trim()}
+            className="shrink-0"
+          >
+            <img
+              src="/assets/chat-send.svg"
+              alt="发送"
+              className={`size-6 transition ${input.trim() ? 'opacity-100' : 'opacity-20'}`}
+            />
           </button>
         </div>
       </div>
