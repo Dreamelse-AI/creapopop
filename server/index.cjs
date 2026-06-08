@@ -5,7 +5,8 @@ const auth = require('./routes/auth.cjs');
 const character = require('./routes/character.cjs');
 const mock = require('./routes/mock.cjs');
 const ai = require('./routes/ai.cjs');
-const { serveStatic } = require('./static.cjs');
+const file = require('./routes/file.cjs');
+const { serveStatic, serveUpload } = require('./static.cjs');
 
 const AI_IMAGE_TASK_RE = /^\/api\/ai\/image\/task\/([^/]+)$/;
 
@@ -50,6 +51,12 @@ function dispatch(req, res) {
     if (reqPath.startsWith('/api/ai/')) {
         return sendJson(res, 501, { error: '该 AI 能力尚未接入' });
     }
+
+    // 文件上传（对齐 Arca 存储范式：业务数据只存短 url，不存 base64）
+    if (reqPath === '/api/file/upload' && m === 'POST') return file.handleUpload(req, res);
+
+    // 用户上传的图片（持久卷），独立于前端构建产物
+    if (reqPath.startsWith('/uploads/') && m === 'GET') return serveUpload(req, res);
 
     // 静态文件兜底（SPA）
     serveStatic(req, res);

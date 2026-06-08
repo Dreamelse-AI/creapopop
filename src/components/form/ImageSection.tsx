@@ -3,6 +3,7 @@ import { useDraftStore } from '@/store/draftStore'
 import { MAX_IMAGES } from '@/data/constants'
 import type { CharacterImage } from '@/types/character'
 import { generateImage, type ImageTaskStatus } from '@/services/aiImage'
+import { uploadImage } from '@/services/upload'
 
 // 形象：上传/AI生图构成虚拟形象库，可设为基础形象/删除。
 // 框架对齐 Figma：头部(标题+计数+批量删除) + 138 网格(上传位弹方式菜单 + 图片悬浮操作)。
@@ -52,9 +53,14 @@ export function ImageSection() {
     const picked = Array.from(files).slice(0, room)
     const newImgs: CharacterImage[] = []
     for (const f of picked) {
-      const url = await fileToDataUrl(f)
-      newImgs.push({ id: `img_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, url, source: 'upload' })
+      try {
+        const { url } = await uploadImage(f)
+        newImgs.push({ id: `img_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, url, source: 'upload' })
+      } catch (e) {
+        setGenError(e instanceof Error ? e.message : '上传失败')
+      }
     }
+    if (!newImgs.length) return
     const images = [...data.images, ...newImgs]
     patch({ images, primaryImageId: data.primaryImageId || images[0]?.id || null })
   }
@@ -348,13 +354,4 @@ function ImageTile({
       )}
     </div>
   )
-}
-
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
 }

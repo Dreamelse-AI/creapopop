@@ -3,7 +3,7 @@ function readBody(req) {
     return new Promise((resolve, reject) => {
         let data = '';
         let size = 0;
-        const MAX = 10 * 1024 * 1024; // 10MB
+        const MAX = 16 * 1024 * 1024; // 16MB（图片 base64 上传需留余量，原图限 8MB）
         req.on('data', (chunk) => {
             size += chunk.length;
             if (size > MAX) {
