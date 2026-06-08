@@ -40,3 +40,29 @@ body {
   background: var(--color-bg);
   color: #000000;
 }
+
+/* Figma 字重映射工具类（对齐设计稿 font-['MiSans:xxx']）*/
+.font-misans {
+  font-family: 'MiSans', system-ui, sans-serif;
+  font-weight: 400;
+}
+.font-misans-medium {
+  font-family: 'MiSans Medium', 'MiSans', system-ui, sans-serif;
+  font-weight: 500;
+}
+.font-misans-semibold {
+  font-family: 'MiSans Semibold', 'MiSans', system-ui, sans-serif;
+  font-weight: 600;
+}
+.font-misans-bold {
+  font-family: 'MiSans', system-ui, sans-serif;
+  font-weight: 700;
+}
+.font-misans-heavy {
+  font-family: 'MiSans Heavy', 'MiSans', system-ui, sans-serif;
+  font-weight: 900;
+}
+.font-black-han {
+  font-family: 'Black Han Sans', 'MiSans', system-ui, sans-serif;
+  font-weight: 400;
+}

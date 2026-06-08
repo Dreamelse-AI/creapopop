@@ -8,8 +8,7 @@ interface LocationState {
 
 const RESEND_SECONDS = 60
 
-// 登录页：暖米色背景 + 居中面板。设计稿为「邮箱 + 邮箱验证码」。
-// mock 阶段验证码固定 123456（点发送后任意填 123456 即可登录）。
+// 登录页 — 严格对齐 Figma 设计稿 1863:70828（邮箱 + 邮箱验证码 + 登录按钮）。
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -55,27 +54,43 @@ export function LoginPage() {
     }
   }
 
+  const canSend = emailValid && countdown === 0 && !sending
+
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-10 bg-[#fbf2d8] px-6">
-      <img src="/logo.svg" alt="POPOP" className="h-[130px] w-[168px]" />
+    <div className="flex size-full flex-col items-center justify-center gap-10 bg-[#fbf2d8]">
+      {/* logo 168.302 × 130.204 */}
+      <img src="/logo.svg" alt="POPOP" className="h-[130.204px] w-[168.302px] shrink-0" />
 
       <form onSubmit={handleSubmit} className="flex flex-col items-center gap-10">
+        {/* 操作面板 w-390 px-24 py-16 gap-12 */}
         <div className="flex w-[390px] flex-col items-center justify-end gap-3 px-6 py-4">
-          <div className="flex w-[366px] flex-col gap-3">
-            <label className="px-2 text-sm font-medium text-black/50">📧 登录账号</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="请输入你的电子邮箱..."
-              className="h-[60px] w-full rounded-[24px] border border-black/[0.06] bg-white px-3 text-base text-black outline-none placeholder:text-black/20 focus:border-black/20"
-            />
+          {/* 登录账号 */}
+          <div className="flex w-[366px] flex-col items-start gap-3">
+            <div className="flex w-full items-center px-2">
+              <span className="font-misans-medium text-center text-[14px] text-[rgba(0,0,0,0.5)]">
+                📧 登录账号
+              </span>
+            </div>
+            <div className="flex h-[60px] w-full items-center overflow-clip rounded-[24px] border border-[rgba(0,0,0,0.06)] bg-white p-3">
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="请输入你的电子邮箱..."
+                className="font-misans-medium min-w-px flex-1 bg-transparent text-[16px] text-black outline-none placeholder:text-[rgba(0,0,0,0.2)]"
+              />
+            </div>
           </div>
 
-          <div className="flex w-[366px] flex-col gap-3">
-            <label className="px-2 text-sm font-medium text-black/50">🔒 邮箱验证码</label>
-            <div className="flex h-[60px] w-full items-center gap-2 rounded-[24px] border border-black/[0.06] bg-white pl-3 pr-2">
+          {/* 邮箱验证码 */}
+          <div className="flex w-[366px] flex-col items-start gap-3">
+            <div className="flex w-full items-center px-2">
+              <span className="font-misans-medium text-center text-[14px] text-[rgba(0,0,0,0.5)]">
+                🔒 邮箱验证码
+              </span>
+            </div>
+            <div className="flex h-[60px] w-full items-center gap-2 overflow-clip rounded-[24px] border border-[rgba(0,0,0,0.06)] bg-white p-3">
               <input
                 type="text"
                 inputMode="numeric"
@@ -83,29 +98,36 @@ export function LoginPage() {
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 placeholder="请输入邮件验证码..."
-                className="h-full flex-1 bg-transparent text-base text-black outline-none placeholder:text-black/20"
+                className="font-misans-medium min-w-px flex-1 bg-transparent text-[16px] text-black outline-none placeholder:text-[rgba(0,0,0,0.2)]"
               />
               <button
                 type="button"
                 onClick={handleSendCode}
-                disabled={!emailValid || countdown > 0 || sending}
-                className="shrink-0 rounded-[100px] border border-black px-3 py-2 text-base font-bold text-black transition disabled:opacity-20"
+                disabled={!canSend}
+                className={`flex shrink-0 items-center justify-center rounded-[100px] border border-black px-3 py-2 ${
+                  canSend ? 'opacity-100' : 'opacity-20'
+                }`}
               >
-                {countdown > 0 ? `${countdown}s` : sending ? '发送中' : '发送验证码'}
+                <span className="font-misans-bold text-[16px] whitespace-nowrap text-black">
+                  {countdown > 0 ? `${countdown}s` : sending ? '发送中' : '发送验证码'}
+                </span>
               </button>
             </div>
           </div>
 
-          {error && <p className="w-[366px] px-2 text-sm text-red-500">{error}</p>}
+          {error && <p className="font-misans-medium w-[366px] px-2 text-[14px] text-red-500">{error}</p>}
         </div>
 
+        {/* 登录按钮 w-390 p-12，按钮 h-60 rounded-20 */}
         <div className="flex w-[390px] items-end justify-center p-3">
           <button
             type="submit"
             disabled={loading || !emailValid || !code}
-            className="flex h-[60px] flex-1 items-center justify-center rounded-[20px] bg-black px-5 py-4 text-[18px] font-semibold leading-6 text-white transition hover:opacity-90 disabled:opacity-40"
+            className="flex h-[60px] min-w-px flex-1 items-center justify-center gap-1 rounded-[20px] bg-black px-5 py-4 transition hover:opacity-90 disabled:opacity-40"
           >
-            {loading ? '登录中…' : '登录'}
+            <span className="font-misans-semibold text-[18px] leading-6 text-white">
+              {loading ? '登录中…' : '登录'}
+            </span>
           </button>
         </div>
       </form>
