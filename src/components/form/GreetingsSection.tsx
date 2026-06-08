@@ -1,5 +1,7 @@
 import { useDraftStore } from '@/store/draftStore'
 
+// 开场白：聊天气泡形式（圆角药丸 + 左下尾巴）。
+// 已填气泡可编辑/清空(×)，末尾空气泡用于新增(+)。
 export function GreetingsSection() {
   const data = useDraftStore((s) => s.data)!
   const patch = useDraftStore((s) => s.patch)
@@ -9,47 +11,83 @@ export function GreetingsSection() {
     next[i] = value
     patch({ greetings: next })
   }
-  const add = () => patch({ greetings: [...data.greetings, ''] })
+  const add = (value: string) => {
+    if (!value.trim()) return
+    patch({ greetings: [...data.greetings, value.trim()] })
+  }
   const remove = (i: number) =>
     patch({ greetings: data.greetings.filter((_, idx) => idx !== i) })
 
   return (
     <div className="flex w-[600px] flex-col gap-2">
       <div className="px-3 py-1.5">
-        <h2 className="text-base font-semibold text-black/30">开场白（可添加多条）</h2>
+        <h2 className="font-misans-semibold text-[16px] text-black/30">角色开场白</h2>
       </div>
 
-      {data.greetings.length === 0 && (
-        <p className="px-3 text-sm text-black/40">还没有开场白，添加一条让角色主动开口。</p>
-      )}
-
       {data.greetings.map((g, i) => (
-        <div
-          key={i}
-          className="flex w-full flex-col gap-2 rounded-[20px] border border-black/[0.06] bg-white p-3"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-base font-medium text-black/50">开场白 {i + 1}</span>
-            <button onClick={() => remove(i)} className="text-sm text-black/40 hover:text-black">
-              删除
-            </button>
-          </div>
-          <textarea
+        <Bubble key={i}>
+          <input
             value={g}
             onChange={(e) => update(i, e.target.value)}
             placeholder="请输入开场白..."
-            rows={2}
-            className="w-full resize-none bg-transparent text-base text-black outline-none placeholder:text-black/20"
+            className="flex-1 bg-transparent font-misans-medium text-[16px] text-black outline-none placeholder:text-black/20"
           />
-        </div>
+          <button onClick={() => remove(i)} className="size-6 shrink-0" title="清空">
+            <img src="/assets/icon-field-clear.svg" alt="清空" className="size-full" />
+          </button>
+        </Bubble>
       ))}
 
-      <button
-        onClick={add}
-        className="self-start rounded-[100px] border border-black/15 px-4 py-1.5 text-sm hover:bg-black/5"
-      >
-        + 添加开场白
-      </button>
+      {/* 新增气泡：回车或点击 + 添加 */}
+      <AddBubble onAdd={add} />
     </div>
+  )
+}
+
+function Bubble({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative w-full">
+      <div className="flex h-12 items-center justify-between gap-2 rounded-[100px] bg-white px-4 py-2.5">
+        {children}
+      </div>
+      <img
+        src="/assets/bubble-tail.svg"
+        alt=""
+        className="pointer-events-none absolute -bottom-[2px] left-0 h-[9.8px] w-[21.6px]"
+      />
+    </div>
+  )
+}
+
+function AddBubble({ onAdd }: { onAdd: (v: string) => void }) {
+  let value = ''
+  return (
+    <Bubble>
+      <input
+        defaultValue=""
+        onChange={(e) => (value = e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            onAdd(value)
+            ;(e.target as HTMLInputElement).value = ''
+            value = ''
+          }
+        }}
+        placeholder="请输入角色打招呼的第一句话..."
+        className="flex-1 bg-transparent font-misans-medium text-[16px] text-black outline-none placeholder:text-black/20"
+      />
+      <button
+        onClick={(e) => {
+          const input = (e.currentTarget.previousElementSibling as HTMLInputElement)
+          onAdd(input.value)
+          input.value = ''
+          value = ''
+        }}
+        className="size-6 shrink-0"
+        title="添加"
+      >
+        <img src="/assets/icon-plus.svg" alt="添加" className="size-full" />
+      </button>
+    </Bubble>
   )
 }

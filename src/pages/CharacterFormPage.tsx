@@ -98,21 +98,21 @@ export function CharacterFormPage() {
             className="flex flex-col py-4 shadow-[inset_0px_-1px_0px_0px_rgba(0,0,0,0.06)]"
           >
             <div className="px-4">
-              <p className="p-3 text-sm font-semibold text-black/30">{group.title}</p>
+              <p className="p-3 font-misans-semibold text-[14px] text-black/30">{group.title}</p>
             </div>
             {group.items.map((item) => (
               <button
                 key={`${item.key}-${item.label}`}
                 onClick={() => item.enabled && setActive(item.key)}
                 disabled={!item.enabled}
-                className={`relative flex h-[60px] w-full items-center px-10 text-base ${
+                className={`relative flex h-[60px] w-full items-center px-10 ${
                   item.enabled ? '' : 'opacity-30'
                 }`}
               >
                 {active === item.key && (
                   <span className="absolute left-2 right-2 top-2 h-11 rounded-[100px] bg-black/[0.03]" />
                 )}
-                <span className="relative text-black">{item.label}</span>
+                <span className="font-misans relative text-[16px] text-black">{item.label}</span>
               </button>
             ))}
           </div>
@@ -148,5 +148,5 @@ function SaveIndicator({ status }: { status: string }) {
         : status === 'error'
           ? '保存失败'
           : '实时保存'
-  return <span className="text-xs text-black/30">{text}</span>
+  return <span className="font-misans text-[12px] text-black/30">{text}</span>
 }

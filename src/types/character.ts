@@ -69,7 +69,7 @@ export function createEmptyCharacter(id: string, ownerEmail: string): Character 
     greetings: [],
     introPage: {
       template: 'none',
-      visibleSections: ['basic', 'image'],
+      visibleSections: ['name', 'tags', 'intro'],
     },
     dynamics: [],
     createdAt: now,

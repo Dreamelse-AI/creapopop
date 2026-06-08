@@ -100,8 +100,8 @@ function IntroPreview() {
         )}
       </div>
       <div className="flex flex-col gap-3 p-4">
-        <h3 className="text-xl font-semibold">{data.name || '未命名角色'}</h3>
-        {data.tags.length > 0 && (
+        <h3 className="font-misans-semibold text-[20px]">{data.name || '未命名角色'}</h3>
+        {sections.includes('tags') && data.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {data.tags.map((t) => (
               <span key={t} className="rounded-[100px] bg-black/5 px-2.5 py-0.5 text-xs">
@@ -110,8 +110,10 @@ function IntroPreview() {
             ))}
           </div>
         )}
-        {data.intro && <p className="text-sm text-black/70">{data.intro}</p>}
-        {data.personality && (
+        {sections.includes('intro') && data.intro && (
+          <p className="text-sm text-black/70">{data.intro}</p>
+        )}
+        {sections.includes('personality') && data.personality && (
           <div>
             <p className="text-xs font-medium text-black/40">性格</p>
             <p className="text-sm text-black/70">{data.personality}</p>

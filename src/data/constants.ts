@@ -13,7 +13,7 @@ export const MAX_TAGS = 3
 export const MAX_NAME_LEN = 8
 export const MAX_INTRO_LEN = 200
 export const MAX_PERSONALITY_LEN = 200
-export const MAX_IMAGES = 9
+export const MAX_IMAGES = 1000
 
 export const SPECIES_OPTIONS = [
   { value: 'human', label: '人类', emoji: '☺️' },
@@ -29,30 +29,52 @@ export const GENDER_OPTIONS = [
   { value: 'unknown', label: '未知', emoji: '❓' },
 ] as const
 
-// 更多细节字段（来自框架图）
+// 更多细节字段（来自设计稿，含 emoji 前缀）
 export const DETAIL_FIELDS = [
-  { key: 'birthplace', label: '出生地' },
-  { key: 'residence', label: '居住地' },
-  { key: 'occupation', label: '职业' },
-  { key: 'appearance', label: '外观' },
-  { key: 'language', label: '语言习惯' },
-  { key: 'dressStyle', label: '穿衣风格' },
-  { key: 'socialMode', label: '社交模式' },
-  { key: 'loveExpression', label: '表达爱的方式' },
-  { key: 'values', label: '价值观' },
-  { key: 'lifestyle', label: '生活习惯' },
-  { key: 'hobbies', label: '爱好' },
-  { key: 'dislikes', label: '讨厌的东西' },
-  { key: 'growth', label: '成长经历' },
-  { key: 'family', label: '家庭成员' },
-  { key: 'relationships', label: '社交关系' },
-  { key: 'worldview', label: '特殊背景/世界观' },
-  { key: 'wishlist', label: '愿望清单' },
+  { key: 'birthplace', label: '出生地', emoji: '👶🏻' },
+  { key: 'residence', label: '居住地', emoji: '📍' },
+  { key: 'occupation', label: '职业', emoji: '💼' },
+  { key: 'appearance', label: '外貌', emoji: '🌈' },
+  { key: 'language', label: '语言习惯', emoji: '💬' },
+  { key: 'dressStyle', label: '穿衣风格', emoji: '🧥' },
+  { key: 'socialMode', label: '社交模式', emoji: '🍻' },
+  { key: 'loveExpression', label: '表达爱的方式', emoji: '💞' },
+  { key: 'values', label: '价值观', emoji: '💎' },
+  { key: 'lifestyle', label: '生活习惯', emoji: '🛏' },
+  { key: 'hobbies', label: '爱好', emoji: '🍭' },
+  { key: 'dislikes', label: '讨厌的东西', emoji: '💣' },
+  { key: 'growth', label: '成长经历', emoji: '⛳️' },
+  { key: 'family', label: '家庭成员', emoji: '👩‍👩‍👧‍👦' },
+  { key: 'relationships', label: '社交关系', emoji: '👭' },
+  { key: 'worldview', label: '特殊背景/世界观', emoji: '🧿' },
+  { key: 'wishlist', label: '愿望清单', emoji: '💝' },
 ] as const
+
+export const MAX_DETAIL_LEN = 200
 
 export const INTRO_SECTIONS = [
   { key: 'basic', label: '基础信息', locked: true },
   { key: 'image', label: '形象', locked: true },
   { key: 'details', label: '更多细节', locked: false },
   { key: 'greetings', label: '开场白', locked: false },
+] as const
+
+// 介绍页"选择展示内容"清单（来自设计稿，主图固定 + 可勾选字段）
+export const INTRO_CONTENT_FIELDS = [
+  { key: 'name', label: '名字' },
+  { key: 'tags', label: '标签' },
+  { key: 'species', label: '物种' },
+  { key: 'gender', label: '性别' },
+  { key: 'voice', label: '音色' },
+  { key: 'intro', label: '简介' },
+  { key: 'personality', label: '性格' },
+  { key: 'details', label: '更多细节' },
+  { key: 'greetings', label: '开场白' },
+] as const
+
+// 介绍页 UI 模版（首个为默认占位，其余为预设缩略图）
+export const INTRO_TEMPLATES = [
+  { value: 'none', label: '默认简约风' },
+  { value: 'tpl1', label: '模版 1' },
+  { value: 'tpl2', label: '模版 2' },
 ] as const
