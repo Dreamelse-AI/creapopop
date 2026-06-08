@@ -25,7 +25,7 @@ export function PreviewPanel() {
         {/* 收起/展开按钮：未选中(收起态)30%，选中(展开态)100% */}
         <button
           onClick={() => setCollapsed((v) => !v)}
-          className="flex size-12 items-center justify-center rounded-[100px] bg-white shadow-[0px_0px_20px_rgba(0,0,0,0.1)]"
+          className="flex size-12 items-center justify-center rounded-[100px] border border-black/[0.06] bg-white"
           title={collapsed ? '展开预览' : '收起预览'}
         >
           <img
@@ -36,7 +36,7 @@ export function PreviewPanel() {
         </button>
 
         {/* tab 图标药丸 */}
-        <div className="flex flex-col rounded-[100px] bg-white py-3 shadow-[0px_0px_20px_rgba(0,0,0,0.1)]">
+        <div className="flex flex-col rounded-[100px] border border-black/[0.06] bg-white py-3">
           {TABS.map((t) => {
             const active = tab === t.key && !collapsed
             return (

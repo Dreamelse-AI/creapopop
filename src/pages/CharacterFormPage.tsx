@@ -120,7 +120,7 @@ export function CharacterFormPage() {
       </aside>
 
       {/* 中间表单区 */}
-      <main className="flex flex-1 justify-center overflow-auto px-4 pt-4">
+      <main className="flex flex-1 justify-center overflow-auto px-4 pb-[30px] pt-4">
         {active === 'basic' && <BasicInfoSection />}
         {active === 'image' && <ImageSection />}
         {active === 'details' && <DetailsSection />}

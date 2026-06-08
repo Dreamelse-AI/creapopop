@@ -43,7 +43,7 @@ export function DetailsSection() {
             className="flex w-full items-center gap-3 rounded-[16px] bg-white p-3 text-left"
           >
             <div className="flex flex-1 flex-col gap-1 overflow-hidden">
-              <span className="font-misans-medium truncate text-[16px] text-black/50">
+              <span className="font-misans-medium truncate text-[16px] text-black">
                 {f.emoji} {f.label}
               </span>
               {value && (

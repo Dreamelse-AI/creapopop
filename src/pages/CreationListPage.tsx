@@ -54,7 +54,7 @@ export function CreationListPage() {
     <div className="flex h-full flex-col bg-[#f7f7f7]">
       <TopNav />
 
-      <main className="flex-1 overflow-auto px-5 pb-8 pt-2">
+      <main className="flex-1 overflow-auto px-5 pb-[30px] pt-2">
         {isLoading && <CenterHint text="加载中…" />}
 
         {isError && (

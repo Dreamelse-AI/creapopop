@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useDraftStore } from '@/store/draftStore'
-import { INTRO_CONTENT_FIELDS, INTRO_TEMPLATES } from '@/data/constants'
+import { INTRO_CONTENT_FIELDS, INTRO_TEMPLATES, DETAIL_FIELDS } from '@/data/constants'
 import { generateIntroPageHtml } from '@/services/aiIntroPage'
-import { SandboxHtml } from '@/components/preview/SandboxHtml'
-import type { IntroTemplate } from '@/types/character'
+import type { Character, IntroTemplate } from '@/types/character'
 
-// 介绍页美化：模版选择(左缩略图) + Agent 对话生成(中) + 选择展示内容(右清单)。
+// 介绍页美化：三栏布局 — 模版缩略图(左) + Agent 生成卡片(中) + 选择展示内容(右)。
+// 严格对照设计稿 1836:44562。
 export function IntroPageSection() {
   const data = useDraftStore((s) => s.data)!
   const patch = useDraftStore((s) => s.patch)
@@ -27,11 +27,12 @@ export function IntroPageSection() {
   }
 
   const runGenerate = async () => {
-    if (!vibe.trim() || generating) return
+    const prompt = vibe.trim() || data.tags.join('、')
+    if (!prompt || generating) return
     setGenerating(true)
     setError(null)
     try {
-      const html = await generateIntroPageHtml(data, vibe)
+      const html = await generateIntroPageHtml(data, prompt)
       patch({ introPage: { ...introPage, customHtml: html } })
       setVibe('')
     } catch (e) {
@@ -42,102 +43,52 @@ export function IntroPageSection() {
   }
 
   return (
-    <div className="flex w-[600px] flex-col gap-4">
-      <div className="px-3 py-1.5">
-        <h2 className="font-misans-semibold text-[16px] text-black/30">介绍页美化</h2>
-      </div>
-
-      {/* 模版缩略图横向选择 */}
-      <div className="flex flex-col gap-2">
-        <p className="px-1 font-misans-semibold text-[14px] text-black/30">UI 模版</p>
-        <div className="flex gap-3 overflow-x-auto pb-1">
-          {INTRO_TEMPLATES.map((t) => {
-            const active = introPage.template === t.value
-            return (
-              <button
-                key={t.value}
-                onClick={() => setTemplate(t.value)}
-                className={`relative flex h-[200px] w-[150px] shrink-0 flex-col items-center justify-center rounded-[20px] border bg-white p-2 ${
-                  active ? 'border-[3px] border-black' : 'border border-black/[0.06]'
-                }`}
-              >
-                <span className="text-center font-misans text-[16px] text-black/30">
-                  {t.label}
-                </span>
-                {t.value === 'none' && (
+    <div className="flex h-full w-full justify-center gap-4 overflow-hidden">
+      {/* 左：模版缩略图竖向列表 */}
+      <div className="flex shrink-0 flex-col gap-4 overflow-auto pb-[30px]">
+        {INTRO_TEMPLATES.map((t) => {
+          const active = introPage.template === t.value
+          return (
+            <button
+              key={t.value}
+              onClick={() => setTemplate(t.value)}
+              className={`relative flex h-[200px] w-[150px] shrink-0 flex-col items-center justify-center overflow-hidden rounded-[20px] bg-white ${
+                active ? 'border-[3px] border-black' : 'border border-black/[0.06]'
+              }`}
+            >
+              <span className="text-center font-misans text-[16px] text-black/30">{t.label}</span>
+              {t.value === 'none' && (
+                <>
+                  <span className="text-center font-misans text-[16px] text-black/30">模版占位</span>
                   <span className="mt-1 text-center font-misans text-[10px] text-black/30">
                     （包含最低标准基础规则）
                   </span>
-                )}
-              </button>
-            )
-          })}
-        </div>
+                </>
+              )}
+            </button>
+          )
+        })}
       </div>
 
-      {/* Agent 对话生成区（顶部预览 + 底部输入） */}
-      <div className="flex flex-col overflow-hidden rounded-[20px] border border-black/[0.06] bg-white">
-        {/* 实时结果预览 */}
-        <div className="aspect-[9/16] max-h-[420px] w-full bg-gradient-to-b from-[#fff0c4] to-[#fff8e4]">
-          {introPage.customHtml && !generating ? (
-            <SandboxHtml html={introPage.customHtml} />
-          ) : (
-            <div className="flex size-full flex-col items-center justify-center gap-3 p-6 text-center">
-              <div className="max-w-[280px] rounded-[24px] bg-black/[0.04] px-4 py-2.5">
-                <p className="font-misans-medium text-[16px] text-black/90">
-                  {generating ? 'Claude 生成中…' : '你可以告诉我你想要的效果'}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+      {/* 中：Agent 生成卡片 */}
+      <AgentCard
+        tags={data.tags}
+        vibe={vibe}
+        setVibe={setVibe}
+        generating={generating}
+        error={error}
+        hasHtml={!!introPage.customHtml}
+        onGenerate={runGenerate}
+        onClear={() => patch({ introPage: { ...introPage, customHtml: undefined } })}
+      />
 
-        {/* 对话输入栏 */}
-        <div className="border-t border-black/[0.06] p-3">
-          <div className="flex items-end gap-2">
-            <textarea
-              value={vibe}
-              onChange={(e) => setVibe(e.target.value)}
-              placeholder="描述你想要的介绍页风格，如：暗黑哥特风、暖色治愈系…"
-              rows={2}
-              disabled={generating}
-              className="flex-1 resize-none bg-transparent font-misans-medium text-[16px] text-black outline-none placeholder:text-black/20 disabled:opacity-50"
-            />
-            <button
-              onClick={runGenerate}
-              disabled={generating || !vibe.trim()}
-              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-black text-white disabled:opacity-30"
-              title="发送"
-            >
-              ↑
-            </button>
-          </div>
-          {error && (
-            <div className="mt-2 flex items-center justify-between rounded-[12px] bg-red-50 px-3 py-2">
-              <span className="font-misans text-[14px] text-red-500">{error}</span>
-              <button onClick={runGenerate} className="font-misans text-[14px] text-red-500 underline">
-                重试
-              </button>
-            </div>
-          )}
-          {introPage.customHtml && !generating && (
-            <button
-              onClick={() => patch({ introPage: { ...introPage, customHtml: undefined } })}
-              className="mt-2 font-misans text-[14px] text-black/40 hover:text-black"
-            >
-              清除，恢复模版
-            </button>
-          )}
-        </div>
-      </div>
+      {/* 右：选择展示内容 */}
+      <div className="flex w-[284px] shrink-0 flex-col gap-2 overflow-auto pb-[30px]">
+        <p className="font-misans-semibold text-[14px] text-black/30">选择展示内容</p>
 
-      {/* 选择展示内容 */}
-      <div className="flex flex-col gap-2">
-        <p className="px-1 font-misans-semibold text-[14px] text-black/30">选择展示内容</p>
-
-        {/* 主图（固定展示） */}
-        <div className="flex flex-wrap gap-2">
-          <div className="relative size-[138px] shrink-0 overflow-hidden rounded-[20px] border border-black/[0.06] bg-black/[0.03]">
+        {/* 主图（固定） + 占位 */}
+        <div className="flex gap-2">
+          <div className="relative size-[138px] shrink-0 overflow-hidden rounded-[20px] border border-black/[0.06] bg-white">
             {primaryUrl(data) ? (
               <img src={primaryUrl(data)} alt="" className="size-full object-cover" />
             ) : (
@@ -151,35 +102,185 @@ export function IntroPageSection() {
           </div>
         </div>
 
-        {/* 可勾选字段 */}
-        <div className="flex flex-col gap-2">
-          {INTRO_CONTENT_FIELDS.map((f) => {
-            const active = introPage.visibleSections.includes(f.key)
-            return (
-              <button
-                key={f.key}
-                onClick={() => toggleField(f.key)}
-                className="flex h-12 w-[284px] items-center gap-3 rounded-[16px] bg-white pl-3 pr-1.5"
-              >
-                <span
-                  className={`flex size-5 items-center justify-center rounded-full ${
-                    active ? 'bg-black text-white' : 'bg-black/10 text-transparent'
-                  }`}
-                >
-                  <span className="text-[12px] leading-none">✓</span>
-                </span>
-                <span className="font-misans-medium text-[16px] text-black/50">{f.label}</span>
-              </button>
-            )
-          })}
+        {/* 可勾选字段：基础字段 + 更多细节 */}
+        {INTRO_CONTENT_FIELDS.map((f) => (
+          <CheckRow
+            key={f.key}
+            label={f.label}
+            checked={introPage.visibleSections.includes(f.key)}
+            onToggle={() => toggleField(f.key)}
+          />
+        ))}
+        {DETAIL_FIELDS.map((f) => {
+          const filled = !!data.details[f.key]
+          return (
+            <CheckRow
+              key={f.key}
+              label={`${f.emoji} ${f.label}`}
+              checked={introPage.visibleSections.includes(f.key)}
+              disabled={!filled}
+              onToggle={() => filled && toggleField(f.key)}
+            />
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// 勾选行：选中=黑底白勾，未选=浅灰，禁用(未填)=20% 透明
+function CheckRow({
+  label,
+  checked,
+  disabled = false,
+  onToggle,
+}: {
+  label: string
+  checked: boolean
+  disabled?: boolean
+  onToggle: () => void
+}) {
+  return (
+    <button
+      onClick={onToggle}
+      disabled={disabled}
+      className="flex h-12 w-[284px] shrink-0 items-center gap-3 rounded-[16px] bg-white pl-3 pr-1.5"
+    >
+      <span className="flex items-center justify-center p-1.5">
+        <span
+          className={`flex size-5 items-center justify-center rounded-full ${
+            checked ? 'bg-black' : 'bg-black/10'
+          }`}
+        >
+          {checked && (
+            <img src="/assets/intro-check.svg" alt="" className="h-[7px] w-[9px] brightness-0 invert" />
+          )}
+        </span>
+      </span>
+      <span
+        className={`font-misans-medium truncate text-[16px] ${
+          disabled ? 'text-black/20' : 'text-black/50'
+        }`}
+      >
+        {label}
+      </span>
+    </button>
+  )
+}
+
+// 中间 Agent 卡片：顶部渐变(关键词+生成) + 分隔 + agent气泡 + 分隔 + 输入栏
+function AgentCard({
+  tags,
+  vibe,
+  setVibe,
+  generating,
+  error,
+  hasHtml,
+  onGenerate,
+  onClear,
+}: {
+  tags: string[]
+  vibe: string
+  setVibe: (v: string) => void
+  generating: boolean
+  error: string | null
+  hasHtml: boolean
+  onGenerate: () => void
+  onClear: () => void
+}) {
+  return (
+    <div className="flex h-full min-w-[300px] flex-1 flex-col justify-between rounded-t-[30px] border border-black/[0.06] bg-white pb-4">
+      {/* 顶部渐变：关键词 + 生成按钮 */}
+      <div className="flex flex-col rounded-t-[30px] bg-gradient-to-b from-[#fff0c4] to-[#fff8e4]">
+        <div className="flex items-center gap-9 p-[18px]">
+          <div className="flex flex-1 items-center gap-2 overflow-hidden">
+            <span className="shrink-0 font-misans-medium text-[16px] leading-[22px] text-black/90">
+              关键词：
+            </span>
+            <div className="flex gap-2 overflow-hidden">
+              {tags.length > 0 ? (
+                tags.map((t) => (
+                  <span
+                    key={t}
+                    className="shrink-0 rounded-[100px] bg-black/[0.04] px-2 py-1.5 font-misans-semibold text-[14px] text-black/50"
+                  >
+                    {t}
+                  </span>
+                ))
+              ) : (
+                <span className="font-misans text-[14px] text-black/30">暂无标签</span>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={onGenerate}
+            disabled={generating}
+            className="flex shrink-0 items-center justify-center gap-1.5 rounded-[100px] bg-black px-6 py-2.5 disabled:opacity-40"
+          >
+            <img src="/assets/intro-star.svg" alt="" className="size-5 brightness-0 invert" />
+            <span className="font-misans-medium text-[16px] text-white">
+              {generating ? '生成中' : '生成'}
+            </span>
+          </button>
+        </div>
+        <div className="h-px w-full bg-black/[0.06]" />
+      </div>
+
+      {/* agent 气泡 */}
+      <div className="flex flex-1 items-start p-4">
+        <div className="relative max-w-[80%]">
+          <div className="rounded-[24px] rounded-bl-[4px] bg-black/[0.04] px-4 py-2.5">
+            <p className="font-misans-medium text-[16px] leading-[22px] text-black/90">
+              {generating ? 'Claude 正在生成介绍页…' : hasHtml ? '已生成，可在右侧预览查看，或继续调整描述。' : '你可以告诉我你想要的效果'}
+            </p>
+          </div>
+          <img
+            src="/assets/chat-tail-white.svg"
+            alt=""
+            className="absolute bottom-0 left-0 h-[8.5px] w-[18.75px] opacity-40"
+          />
+        </div>
+      </div>
+
+      {error && <p className="px-4 pb-2 font-misans text-[14px] text-red-500">{error}</p>}
+      {hasHtml && !generating && (
+        <button onClick={onClear} className="px-4 pb-1 text-left font-misans text-[14px] text-black/40">
+          清除，恢复模版
+        </button>
+      )}
+
+      {/* 底部输入栏 */}
+      <div className="flex flex-col gap-2.5">
+        <div className="h-px w-full bg-black/[0.06]" />
+        <div className="flex items-end gap-9 p-[18px]">
+          <textarea
+            value={vibe}
+            onChange={(e) => setVibe(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                onGenerate()
+              }
+            }}
+            placeholder="描述你想要的介绍页风格，如：暗黑哥特风、暖色治愈系…"
+            rows={1}
+            disabled={generating}
+            className="flex-1 resize-none bg-transparent font-misans-medium text-[16px] leading-[22px] text-black outline-none placeholder:text-black/20 disabled:opacity-50"
+          />
+          <button onClick={onGenerate} disabled={generating || !vibe.trim()} className="shrink-0">
+            <img
+              src="/assets/chat-send.svg"
+              alt="发送"
+              className={`size-6 transition ${vibe.trim() ? 'opacity-100' : 'opacity-20'}`}
+            />
+          </button>
         </div>
       </div>
     </div>
   )
 }
 
-function primaryUrl(data: ReturnType<typeof useDraftStore.getState>['data']): string {
-  if (!data) return ''
+function primaryUrl(data: Character): string {
   return (
     data.images.find((i) => i.id === data.primaryImageId)?.url ||
     data.images[0]?.url ||
