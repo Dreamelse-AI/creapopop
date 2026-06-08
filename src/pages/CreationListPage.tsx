@@ -75,106 +75,79 @@ export function CreationListPage() {
         )}
 
         {isEmpty && (
-          <CenterState
-            title="还没有角色"
-            desc="创建你的第一个 AI 陪伴角色吧"
-            action={
-              <PillButton
-                onClick={() => createMut.mutate()}
-                disabled={createMut.isPending}
-                className="bg-[#fdeab3] text-black"
-              >
-                {createMut.isPending ? '创建中…' : '创建角色'}
-              </PillButton>
-            }
-          />
+          <div className="flex h-full flex-col items-center justify-center gap-6">
+            <img
+              src="/assets/empty-illustration.svg"
+              alt=""
+              className="h-[110px] w-[184px]"
+            />
+            <button
+              onClick={() => createMut.mutate()}
+              disabled={createMut.isPending}
+              className="flex items-center justify-center rounded-[2000px] bg-[#fdeab3] px-6 py-3 text-2xl font-black text-black transition hover:brightness-95 disabled:opacity-50"
+            >
+              {createMut.isPending ? '创建中…' : '创建'}
+            </button>
+          </div>
         )}
 
         {!isLoading && !isError && !isEmpty && (
-          <div className="grid grid-cols-2 gap-6">
-            <Column
-              title="草稿箱"
-              count={draftList.length}
-              onCreate={() => createMut.mutate()}
-              creating={createMut.isPending}
-            >
-              {draftList.map((c) => (
-                <CharacterCard
-                  key={c.id}
-                  character={c}
-                  onClick={() => navigate(`/character/${c.id}`)}
-                  footer={
-                    <div className="flex gap-2">
-                      <SmallBtn onClick={() => publishMut.mutate(c.id)}>发布</SmallBtn>
-                      <SmallBtn onClick={() => deleteMut.mutate(c.id)}>删除</SmallBtn>
-                    </div>
-                  }
-                />
-              ))}
-            </Column>
+          <div className="mx-auto flex w-full max-w-[1512px] flex-col gap-12">
+            <section className="flex flex-col gap-2">
+              <div className="flex items-center p-3">
+                <h2 className="text-base font-semibold text-black/30">
+                  草稿箱 {draftList.length}
+                </h2>
+              </div>
+              <div className="flex flex-wrap items-center gap-4">
+                <button
+                  onClick={() => createMut.mutate()}
+                  disabled={createMut.isPending}
+                  className="flex h-[268px] w-[358px] shrink-0 flex-col items-center justify-center gap-2 rounded-[20px] border border-dashed border-black/15 bg-white/60 text-black/40 transition hover:bg-white disabled:opacity-50"
+                >
+                  <span className="text-4xl font-light">+</span>
+                  <span className="text-base">{createMut.isPending ? '创建中…' : '新建角色'}</span>
+                </button>
+                {draftList.map((c) => (
+                  <CharacterCard
+                    key={c.id}
+                    character={c}
+                    variant="draft"
+                    onEdit={() => navigate(`/character/${c.id}`)}
+                    onPublish={() => publishMut.mutate(c.id)}
+                    onDelete={() => deleteMut.mutate(c.id)}
+                  />
+                ))}
+              </div>
+            </section>
 
-            <Column title="已发布" count={publishedList.length}>
-              {publishedList.map((c) => (
-                <CharacterCard
-                  key={c.id}
-                  character={c}
-                  onClick={() => navigate(`/character/${c.id}`)}
-                  footer={<SmallBtn onClick={() => deleteMut.mutate(c.id)}>删除</SmallBtn>}
-                />
-              ))}
-            </Column>
+            <section className="flex flex-col gap-2">
+              <div className="flex h-[45px] items-center p-3">
+                <h2 className="text-base font-semibold text-black/30">
+                  已发布 {publishedList.length}
+                </h2>
+              </div>
+              {publishedList.length === 0 ? (
+                <p className="px-3 text-sm text-black/30">还没有发布的角色</p>
+              ) : (
+                <div className="flex flex-wrap items-center gap-4">
+                  {publishedList.map((c) => (
+                    <CharacterCard
+                      key={c.id}
+                      character={c}
+                      variant="published"
+                      onEdit={() => navigate(`/character/${c.id}`)}
+                      onDynamic={() => navigate(`/character/${c.id}`)}
+                      onDelete={() => deleteMut.mutate(c.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
           </div>
         )}
       </main>
     </div>
-  )
-}
-
-function Column({
-  title,
-  count,
-  onCreate,
-  creating,
-  children,
-}: {
-  title: string
-  count: number
-  onCreate?: () => void
-  creating?: boolean
-  children: React.ReactNode
-}) {
-  return (
-    <section>
-      <div className="mb-3 flex items-center justify-between px-1">
-        <h2 className="text-base font-semibold">
-          {title} <span className="text-black/40">{count}</span>
-        </h2>
-        {onCreate && (
-          <button
-            onClick={onCreate}
-            disabled={creating}
-            className="rounded-[100px] bg-[#fdeab3] px-4 py-1.5 text-sm font-medium disabled:opacity-50"
-          >
-            {creating ? '创建中…' : '+ 新建'}
-          </button>
-        )}
-      </div>
-      <div className="grid grid-cols-2 gap-4">{children}</div>
-    </section>
-  )
-}
-
-function SmallBtn({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={(e) => {
-        e.stopPropagation()
-        onClick()
-      }}
-      className="rounded-[100px] border border-black/15 px-3 py-1 text-sm hover:bg-black/5"
-    >
-      {children}
-    </button>
   )
 }
 

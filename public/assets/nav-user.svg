@@ -1,0 +1,26 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 2117132526">
+<g id="Rectangle 346243742">
+<rect width="30" height="30" rx="15" fill="var(--fill-0, black)" fill-opacity="0.02"/>
+<rect x="0.5" y="0.5" width="29" height="29" rx="14.5" stroke="var(--stroke-0, black)" stroke-opacity="0.04"/>
+</g>
+<mask id="mask0_0_4" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="30" height="30">
+<rect id="Rectangle 346243743" width="30" height="30" rx="15" fill="var(--fill-0, black)"/>
+</mask>
+<g mask="url(#mask0_0_4)">
+<g id="Ellipse 111820" filter="url(#filter0_f_0_4)">
+<circle cx="19" cy="21" r="17" fill="var(--fill-0, black)" fill-opacity="0.08"/>
+</g>
+<rect id="Rectangle 346243744" x="8.69459" y="10" width="3" height="4" rx="1.5" transform="rotate(10 8.69459 10)" fill="var(--fill-0, white)"/>
+<rect id="Rectangle 346243745" x="14.8469" y="11.2148" width="3" height="4" rx="1.5" transform="rotate(10 14.8469 11.2148)" fill="var(--fill-0, white)"/>
+<path id="Vector 7427" d="M10 17C10 17 13.5 18 14 17" stroke="var(--stroke-0, white)" stroke-width="2" stroke-linecap="round"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_f_0_4" x="-2" y="0" width="42" height="42" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="2" result="effect1_foregroundBlur_0_4"/>
+</filter>
+</defs>
+</svg>

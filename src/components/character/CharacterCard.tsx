@@ -1,40 +1,98 @@
 import type { Character } from '@/types/character'
 
-// 角色卡片：封面 + 名字 + 操作。封面取主图或首图，无图占位。
+interface CharacterCardProps {
+  character: Character
+  variant: 'draft' | 'published'
+  onEdit?: () => void
+  onDelete?: () => void
+  onPublish?: () => void
+  onDynamic?: () => void
+}
+
+// 角色卡片：358×268 圆角 20，封面铺满。
+// 草稿态：顶部渐变栏(名字+编辑+删除) + 右下发布按钮。
+// 已发布态：顶部渐变栏(名字+删除) + 底部渐变操作栏(编辑|动态)。
 export function CharacterCard({
   character,
-  onClick,
-  footer,
-}: {
-  character: Character
-  onClick?: () => void
-  footer?: React.ReactNode
-}) {
+  variant,
+  onEdit,
+  onDelete,
+  onPublish,
+  onDynamic,
+}: CharacterCardProps) {
   const cover =
     character.images.find((i) => i.id === character.primaryImageId)?.url ||
     character.images[0]?.url ||
     ''
+  const unnamed = !character.name
+  const canPublish = variant === 'draft' && !unnamed
 
   return (
-    <div className="overflow-hidden rounded-[16px] border border-black/[0.06] bg-white">
-      <button
-        onClick={onClick}
-        className="block aspect-[358/268] w-full overflow-hidden bg-[#f0f0f0]"
-      >
-        {cover ? (
-          <img src={cover} alt={character.name} className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-black/20">
-            暂无形象
-          </div>
-        )}
-      </button>
-      <div className="flex items-center justify-between px-3 py-3">
-        <span className="truncate text-base font-medium">
-          {character.name || '未命名角色'}
-        </span>
-        {footer}
+    <div className="relative h-[268px] w-[358px] shrink-0 overflow-hidden rounded-[20px] border border-black/[0.06] bg-white">
+      {cover ? (
+        <img src={cover} alt="" className="absolute inset-0 size-full object-cover" />
+      ) : (
+        <div className="absolute inset-0 bg-[#f0f0f0]" />
+      )}
+
+      {/* 顶部渐变栏：名字 + 编辑 + 删除 */}
+      <div className="absolute inset-x-0 top-0 flex h-[72px] items-start justify-between bg-gradient-to-b from-black/60 to-transparent p-3">
+        <button
+          onClick={onEdit}
+          className="flex items-center gap-1"
+          title="编辑"
+        >
+          <span
+            className={`text-xl font-bold ${unnamed ? 'text-black/30' : 'text-white'}`}
+          >
+            {character.name || '未命名角色'}
+          </span>
+          <img src="/assets/icon-edit-white.svg" alt="" className="size-6" />
+        </button>
+        <button onClick={onDelete} title="删除" className="size-6 shrink-0">
+          <img src="/assets/icon-delete.svg" alt="删除" className="size-full" />
+        </button>
       </div>
+
+      {/* 草稿态：右下发布按钮 */}
+      {variant === 'draft' && (
+        <button
+          onClick={onPublish}
+          disabled={!canPublish}
+          className={`absolute bottom-3 right-3 flex h-9 items-center gap-1 rounded-[30px] py-2 pl-3 pr-4 ${
+            canPublish ? 'bg-[#fdeab3]' : 'bg-black/[0.06]'
+          }`}
+          title={canPublish ? '发布' : '请先填写角色名'}
+        >
+          <img
+            src="/assets/icon-publish.svg"
+            alt=""
+            className={`size-4 ${canPublish ? '' : 'opacity-20'}`}
+          />
+          <span
+            className={`text-sm font-bold ${canPublish ? 'text-black' : 'text-black/20'}`}
+          >
+            发布
+          </span>
+        </button>
+      )}
+
+      {/* 已发布态：底部渐变操作栏 编辑|动态 */}
+      {variant === 'published' && (
+        <div className="absolute inset-x-0 bottom-0 flex flex-col items-start justify-end rounded-b-[20px] bg-gradient-to-b from-transparent to-black px-3 pb-3 pt-[68px]">
+          <div className="flex w-full items-center justify-between py-2">
+            <button onClick={onEdit} className="flex w-[160px] items-center justify-center gap-1">
+              <img src="/assets/icon-edit-white.svg" alt="" className="size-6" />
+              <span className="text-xl font-bold text-white">编辑</span>
+            </button>
+            <span className="h-5 w-px bg-white/40" />
+            <button onClick={onDynamic} className="flex w-[160px] items-center justify-center gap-1">
+              <img src="/assets/icon-dynamic.svg" alt="" className="size-6" />
+              <span className="text-xl font-bold text-white">动态</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
