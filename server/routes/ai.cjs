@@ -96,6 +96,9 @@ async function handleIntroPage(req, res) {
     if (!resolveEmail(req, res)) return;
     try {
         const body = await readBody(req);
+        // 兜底默认 model，避免漏传导致 apimart 报错
+        if (body && !body.model) body.model = 'claude-sonnet-4-5-20250929';
+        if (body && !body.max_tokens) body.max_tokens = 4096;
         const resp = await apimartRequest('POST', '/v1/messages', body, 'anthropic');
         res.writeHead(resp.status, { 'Content-Type': 'application/json' });
         res.end(resp.body);
