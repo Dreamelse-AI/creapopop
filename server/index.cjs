@@ -24,6 +24,7 @@ function dispatch(req, res) {
     if (reqPath === '/health') return sendJson(res, 200, { status: 'ok' });
 
     // 账号
+    if (reqPath === '/api/auth/send-code' && m === 'POST') return auth.handleSendCode(req, res);
     if (reqPath === '/api/auth/login' && m === 'POST') return auth.handleLogin(req, res);
     if (reqPath === '/api/auth/logout' && m === 'POST') return auth.handleLogout(req, res);
 
