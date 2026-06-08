@@ -18,12 +18,12 @@ export function PreviewPanel() {
       <div className="flex h-full flex-col items-center gap-2 p-4">
         <button
           onClick={() => setCollapsed(false)}
-          className="flex size-12 items-center justify-center rounded-[100px] bg-white"
+          className="flex size-12 items-center justify-center rounded-[100px] bg-white shadow-sm"
           title="展开预览"
         >
-          ▸
+          ‹
         </button>
-        <div className="flex flex-col gap-2 rounded-[100px] bg-white py-3">
+        <div className="flex flex-col rounded-[100px] bg-white py-3 shadow-sm">
           {(['intro', 'chat', 'dynamics'] as PreviewTab[]).map((t) => (
             <button
               key={t}
@@ -31,7 +31,8 @@ export function PreviewPanel() {
                 setTab(t)
                 setCollapsed(false)
               }}
-              className="flex size-12 items-center justify-center"
+              className="flex size-12 items-center justify-center text-lg"
+              title={t === 'intro' ? '介绍页' : t === 'chat' ? '聊天页' : '动态页'}
             >
               {t === 'intro' ? '📄' : t === 'chat' ? '💬' : '💭'}
             </button>
@@ -42,30 +43,37 @@ export function PreviewPanel() {
   }
 
   return (
-    <div className="flex h-full w-[390px] flex-col p-4">
-      <div className="flex items-center justify-between pb-3">
+    <div className="flex h-full w-[422px] flex-col gap-3 p-4">
+      <div className="flex items-center justify-between">
         <div className="flex gap-1 rounded-[100px] bg-black/5 p-1">
           {(['intro', 'chat', 'dynamics'] as PreviewTab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`rounded-[100px] px-3 py-1 text-sm ${
-                tab === t ? 'bg-white shadow-sm' : 'text-black/50'
+              className={`rounded-[100px] px-4 py-1.5 text-sm font-medium transition ${
+                tab === t ? 'bg-white text-black shadow-sm' : 'text-black/50'
               }`}
             >
               {t === 'intro' ? '介绍页' : t === 'chat' ? '聊天页' : '动态页'}
             </button>
           ))}
         </div>
-        <button onClick={() => setCollapsed(true)} className="text-black/40" title="收起">
-          ◂
+        <button
+          onClick={() => setCollapsed(true)}
+          className="flex size-9 items-center justify-center rounded-full text-black/40 hover:bg-black/5"
+          title="收起"
+        >
+          ›
         </button>
       </div>
 
-      <div className="flex-1 overflow-auto rounded-[20px] border border-black/[0.06] bg-white">
-        {tab === 'intro' && <IntroPreview />}
-        {tab === 'chat' && <ChatPreview />}
-        {tab === 'dynamics' && <PlaceholderTab text="动态页将在 P2 接入" />}
+      {/* 手机预览框 */}
+      <div className="flex-1 overflow-hidden rounded-[32px] border-[6px] border-black bg-white shadow-xl">
+        <div className="h-full overflow-auto">
+          {tab === 'intro' && <IntroPreview />}
+          {tab === 'chat' && <ChatPreview />}
+          {tab === 'dynamics' && <PlaceholderTab text="动态页将在 P2 接入" />}
+        </div>
       </div>
     </div>
   )
