@@ -41,31 +41,43 @@ jobs:
 
       - name: Rsync to server
         run: |
-          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
-            "mkdir -p ${{ secrets.DEPLOY_PATH }}"
+          # 复用单条 SSH 连接（ControlMaster），并对短时连接限流做重试，避免 "connection unexpectedly closed"
+          SSH_OPTS="-o ConnectTimeout=30 -o ServerAliveInterval=15 -o ControlMaster=auto -o ControlPath=~/.ssh/cm-%r@%h:%p -o ControlPersist=120"
 
-          rsync -az --delete \
-            --exclude='node_modules/' \
-            --exclude='dist/' \
-            --exclude='.git/' \
-            --exclude='.cursor/' \
-            --exclude='.env' \
-            --exclude='.env.*' \
-            --exclude='secrets/' \
-            --exclude='.data/' \
-            --exclude='*.tsbuildinfo' \
-            --exclude='.DS_Store' \
-            ./ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/
+          n=0
+          until [ $n -ge 3 ]; do
+            rsync -az --delete \
+              -e "ssh $SSH_OPTS" \
+              --rsync-path="mkdir -p ${{ secrets.DEPLOY_PATH }} && rsync" \
+              --exclude='node_modules/' \
+              --exclude='dist/' \
+              --exclude='.git/' \
+              --exclude='.cursor/' \
+              --exclude='.env' \
+              --exclude='.env.*' \
+              --exclude='secrets/' \
+              --exclude='.data/' \
+              --exclude='*.tsbuildinfo' \
+              --exclude='.DS_Store' \
+              ./ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/ && break
+            n=$((n+1))
+            echo "rsync 第 $n 次失败（可能是 SSH 连接限流），等待 ${n}0s 后重试…"
+            sleep ${n}0
+          done
+          [ $n -lt 3 ]
 
       - name: Build and restart container
         env:
           REMOTE: ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}
           REMOTE_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
-          ssh $REMOTE bash -se <<EOF
+          ssh -o ConnectTimeout=30 -o ServerAliveInterval=15 $REMOTE bash -se <<EOF
             set -euo pipefail
             cd $REMOTE_PATH
-            docker compose build --no-cache
+            # 构建前清理可回收的构建缓存/悬空镜像，避免磁盘占满导致 build 失败
+            docker builder prune -f >/dev/null 2>&1 || true
+            docker image prune -f >/dev/null 2>&1 || true
+            docker compose build
             docker compose up -d
             sleep 3
             docker compose logs --tail=20
