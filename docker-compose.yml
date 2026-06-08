@@ -10,6 +10,9 @@ services:
       - "traefik.docker.network=web"
       - "traefik.http.routers.creapopop.rule=Host(`creapopop.imaginewithu.com`)"
       - "traefik.http.routers.creapopop.entrypoints=web"
+      # 共享网关上 Traefik dashboard 注册了无 Host 限制的 PathPrefix(`/api`)，
+      # 会拦截所有域名下的 /api 请求。显式抬高本路由优先级，确保按 Host 命中本服务。
+      # 详见 docs/DEPLOY.md「Traefik /api 路由冲突」。
       - "traefik.http.routers.creapopop.priority=1000"
       - "traefik.http.services.creapopop.loadbalancer.server.port=9527"
 
