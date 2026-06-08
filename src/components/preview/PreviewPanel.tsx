@@ -6,73 +6,70 @@ import { sendChatMessage, type ChatMessage } from '@/services/aiChat'
 
 type PreviewTab = 'intro' | 'chat' | 'dynamics'
 
+const TABS: { key: PreviewTab; icon: string; label: string }[] = [
+  { key: 'intro', icon: '/assets/rail-intro.svg', label: '介绍页' },
+  { key: 'chat', icon: '/assets/rail-chat.svg', label: '聊天页' },
+  { key: 'dynamics', icon: '/assets/rail-dynamic.svg', label: '动态页' },
+]
+
 // 右侧悬浮预览面板：基于角色信息 + 模板实时展示。
-// P0 实现静态介绍页预览；聊天页试聊 / 动态在 P1/P2。
-// 可折叠（折叠态为窄条 icon）。
+// 右侧固定 80px 竖向 rail（收起按钮 + 三个 tab icon 药丸）；展开时左侧出现手机预览。
 export function PreviewPanel() {
   const [collapsed, setCollapsed] = useState(false)
   const [tab, setTab] = useState<PreviewTab>('intro')
 
-  if (collapsed) {
-    return (
-      <div className="flex h-full flex-col items-center gap-2 p-4">
-        <button
-          onClick={() => setCollapsed(false)}
-          className="flex size-12 items-center justify-center rounded-[100px] bg-white shadow-sm"
-          title="展开预览"
-        >
-          ‹
-        </button>
-        <div className="flex flex-col rounded-[100px] bg-white py-3 shadow-sm">
-          {(['intro', 'chat', 'dynamics'] as PreviewTab[]).map((t) => (
-            <button
-              key={t}
-              onClick={() => {
-                setTab(t)
-                setCollapsed(false)
-              }}
-              className="flex size-12 items-center justify-center text-lg"
-              title={t === 'intro' ? '介绍页' : t === 'chat' ? '聊天页' : '动态页'}
-            >
-              {t === 'intro' ? '📄' : t === 'chat' ? '💬' : '💭'}
-            </button>
-          ))}
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="flex h-full w-[422px] flex-col gap-3 p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex gap-1 rounded-[100px] bg-black/5 p-1">
-          {(['intro', 'chat', 'dynamics'] as PreviewTab[]).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`rounded-[100px] px-4 py-1.5 text-sm font-medium transition ${
-                tab === t ? 'bg-white text-black shadow-sm' : 'text-black/50'
-              }`}
-            >
-              {t === 'intro' ? '介绍页' : t === 'chat' ? '聊天页' : '动态页'}
-            </button>
-          ))}
+    <div className="flex h-full">
+      {/* 手机预览（展开时显示） */}
+      {!collapsed && (
+        <div className="flex h-full w-[360px] items-start justify-center p-4">
+          <div className="h-full w-full overflow-hidden rounded-[32px] border-[6px] border-black bg-white shadow-xl">
+            <div className="h-full overflow-auto">
+              {tab === 'intro' && <IntroPreview />}
+              {tab === 'chat' && <ChatPreview />}
+              {tab === 'dynamics' && <PlaceholderTab text="动态页将在 P2 接入" />}
+            </div>
+          </div>
         </div>
-        <button
-          onClick={() => setCollapsed(true)}
-          className="flex size-9 items-center justify-center rounded-full text-black/40 hover:bg-black/5"
-          title="收起"
-        >
-          ›
-        </button>
-      </div>
+      )}
 
-      {/* 手机预览框 */}
-      <div className="flex-1 overflow-hidden rounded-[32px] border-[6px] border-black bg-white shadow-xl">
-        <div className="h-full overflow-auto">
-          {tab === 'intro' && <IntroPreview />}
-          {tab === 'chat' && <ChatPreview />}
-          {tab === 'dynamics' && <PlaceholderTab text="动态页将在 P2 接入" />}
+      {/* 右侧竖向 rail（始终显示） */}
+      <div className="flex h-full flex-col items-center gap-2 p-4">
+        {/* 收起/展开按钮 */}
+        <button
+          onClick={() => setCollapsed((v) => !v)}
+          className="flex size-12 items-center justify-center rounded-[100px] bg-white shadow-[0px_0px_20px_rgba(0,0,0,0.1)]"
+          title={collapsed ? '展开预览' : '收起预览'}
+        >
+          <img
+            src="/assets/rail-collapse.svg"
+            alt=""
+            className={`size-5 ${collapsed ? '' : 'rotate-180'}`}
+          />
+        </button>
+
+        {/* tab 图标药丸 */}
+        <div className="flex flex-col rounded-[100px] bg-white py-3 shadow-[0px_0px_20px_rgba(0,0,0,0.1)]">
+          {TABS.map((t) => {
+            const active = tab === t.key && !collapsed
+            return (
+              <button
+                key={t.key}
+                onClick={() => {
+                  setTab(t.key)
+                  setCollapsed(false)
+                }}
+                className="flex size-12 items-center justify-center"
+                title={t.label}
+              >
+                <img
+                  src={t.icon}
+                  alt={t.label}
+                  className={`size-5 transition ${active ? 'opacity-100' : 'opacity-30'}`}
+                />
+              </button>
+            )
+          })}
         </div>
       </div>
     </div>
