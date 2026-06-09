@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useDraftStore } from '@/store/draftStore'
 import { DETAIL_FIELDS, MAX_DETAIL_LEN } from '@/data/constants'
+import { SectionTitle } from '@/components/ui/primitives'
 
 // 更多细节：单行卡片(emoji+标签+右箭头/已填值)，点击弹窗编辑。
 export function DetailsSection() {
@@ -30,9 +31,7 @@ export function DetailsSection() {
 
   return (
     <div className="flex w-[600px] flex-col gap-2">
-      <div className="px-3 py-1.5">
-        <h2 className="font-misans text-[16px] text-black/30">角色更多细节</h2>
-      </div>
+      <SectionTitle>角色更多细节</SectionTitle>
 
       {DETAIL_FIELDS.map((f) => {
         const value = data.details[f.key]
@@ -43,8 +42,9 @@ export function DetailsSection() {
             className="flex w-full items-center gap-3 rounded-[16px] bg-white p-3 text-left"
           >
             <div className="flex flex-1 flex-col gap-1 overflow-hidden">
-              <span className="font-misans-medium truncate text-[16px] text-black/50">
-                {f.emoji} {f.label}
+              <span className="flex items-center gap-1 truncate font-misans-medium text-[16px]">
+                <span>{f.emoji}</span>
+                <span className="text-black/50">{f.label}</span>
               </span>
               {value && (
                 <span className="font-misans-medium truncate text-[16px] text-black">{value}</span>

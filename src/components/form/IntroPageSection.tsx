@@ -3,6 +3,7 @@ import { useDraftStore } from '@/store/draftStore'
 import { INTRO_CONTENT_FIELDS, INTRO_TEMPLATES, DETAIL_FIELDS, MAX_IMAGES } from '@/data/constants'
 import { generateIntroPageHtml } from '@/services/aiIntroPage'
 import { uploadImage } from '@/services/upload'
+import { SectionTitle } from '@/components/ui/primitives'
 import type { Character, CharacterImage, IntroTemplate } from '@/types/character'
 
 // 介绍页美化：三栏布局 — 模版缩略图(左) + Agent 生成卡片(中) + 选择展示内容(右)。
@@ -115,33 +116,41 @@ export function IntroPageSection() {
 
       {/* 右：选择展示内容 */}
       <div className="flex w-[284px] shrink-0 flex-col gap-2 overflow-auto pb-[30px]">
-        <p className="font-misans text-[14px] text-black/30">选择展示内容</p>
+        <SectionTitle className="px-0">选择展示内容</SectionTitle>
 
-        {/* 主图（可替换） + 新增图片位 */}
+        {/* 主图（可替换/上传） + 新增图片位（有主图后才出现） */}
         <div className="flex gap-2">
-          <div className="relative size-[138px] shrink-0 overflow-hidden rounded-[20px] border border-black/[0.06] bg-white">
-            {primaryUrl(data) ? (
+          {primaryUrl(data) ? (
+            <div className="relative size-[138px] shrink-0 overflow-hidden rounded-[20px] border border-black/[0.06] bg-white">
               <img src={primaryUrl(data)} alt="" className="size-full object-cover" />
-            ) : (
-              <div className="flex size-full items-center justify-center text-black/20">
-                <img src="/assets/icon-plus.svg" alt="" className="size-8" />
-              </div>
-            )}
-            <span className="pointer-events-none absolute left-1 top-1 rounded-[100px] bg-[rgba(48,48,48,0.9)] px-2 py-1 font-misans-bold text-[12px] text-white">
-              主图
-            </span>
-            {data.images.length > 1 && (
-              <button
-                onClick={cyclePrimary}
-                title="替换主图"
-                className="absolute bottom-1 right-1 flex size-7 items-center justify-center"
-              >
-                <img src="/assets/intro-change.svg" alt="替换" className="size-7" />
-              </button>
-            )}
-          </div>
+              <span className="pointer-events-none absolute left-1 top-1 rounded-[100px] bg-[rgba(48,48,48,0.9)] px-2 py-1 font-misans-bold text-[12px] text-white">
+                主图
+              </span>
+              {data.images.length > 1 && (
+                <button
+                  onClick={cyclePrimary}
+                  title="替换主图"
+                  className="absolute bottom-1 right-1 flex size-7 items-center justify-center"
+                >
+                  <img src="/assets/intro-change.svg" alt="替换" className="size-7" />
+                </button>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={() => fileRef.current?.click()}
+              title="上传主图"
+              className="relative flex size-[138px] shrink-0 items-center justify-center rounded-[20px] border border-black/[0.06] bg-white transition hover:bg-black/[0.02]"
+            >
+              <img src="/assets/icon-plus.svg" alt="上传" className="size-8" />
+              <span className="pointer-events-none absolute left-1 top-1 rounded-[100px] bg-[rgba(48,48,48,0.9)] px-2 py-1 font-misans-bold text-[12px] text-white">
+                主图
+              </span>
+            </button>
+          )}
 
-          {data.images.length < MAX_IMAGES && (
+          {/* 第二个新增位：仅在已有主图时出现 */}
+          {primaryUrl(data) && data.images.length < MAX_IMAGES && (
             <button
               onClick={() => fileRef.current?.click()}
               title="新增图片"
@@ -178,7 +187,8 @@ export function IntroPageSection() {
           return (
             <CheckRow
               key={f.key}
-              label={`${f.emoji} ${f.label}`}
+              emoji={f.emoji}
+              label={f.label}
               checked={introPage.visibleSections.includes(f.key)}
               disabled={!filled}
               onToggle={() => filled && toggleField(f.key)}
@@ -191,17 +201,19 @@ export function IntroPageSection() {
 }
 
 // 勾选行四态：
-//  locked  默认选中、不可取消（名字~性格 7项）：黑底白勾，点击无效
-//  checked 选中可取消（开场白 / 已填的细节）：黑底白勾
-//  普通未选：浅灰圈
+//  locked  默认选中、不可取消（名字~性格 7项）：勾选圈 10% 不透明度（区分可取消项），点击无效
+//  checked 选中可取消（开场白 / 已填的细节）：黑底白勾 100%
+//  普通未选：浅灰空心圈
 //  disabled 未填写内容：整行 20% 置灰、不可点
 function CheckRow({
+  emoji,
   label,
   checked,
   locked = false,
   disabled = false,
   onToggle,
 }: {
+  emoji?: string
   label: string
   checked: boolean
   locked?: boolean
@@ -220,14 +232,17 @@ function CheckRow({
         <span
           className={`flex size-5 items-center justify-center rounded-full ${
             checked ? 'bg-black' : 'border border-black/15 bg-transparent'
-          }`}
+          } ${locked ? 'opacity-10' : ''}`}
         >
           {checked && (
             <img src="/assets/intro-check.svg" alt="" className="h-[7px] w-[9px] brightness-0 invert" />
           )}
         </span>
       </span>
-      <span className="font-misans-medium truncate text-[16px] text-black/50">{label}</span>
+      <span className="flex items-center gap-1 truncate font-misans-medium text-[16px]">
+        {emoji && <span>{emoji}</span>}
+        <span className="text-black/50">{label}</span>
+      </span>
     </button>
   )
 }
@@ -365,9 +380,9 @@ function AgentCard({
             onClick={() => fileRef.current?.click()}
             disabled={generating}
             title="添加附件（图片 / txt / doc / pdf / 音乐）"
-            className="flex size-7 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-[20px] leading-none text-black/40 disabled:opacity-50"
+            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] disabled:opacity-50"
           >
-            +
+            <img src="/assets/icon-plus.svg" alt="添加附件" className="size-5" />
           </button>
           <textarea
             value={vibe}
@@ -387,7 +402,7 @@ function AgentCard({
             <img
               src="/assets/chat-send.svg"
               alt="发送"
-              className={`size-6 transition ${vibe.trim() ? 'opacity-100' : 'opacity-20'}`}
+              className={`size-5 transition ${vibe.trim() ? 'opacity-100' : 'opacity-20'}`}
             />
           </button>
         </div>

@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { TopNav } from '@/components/layout/TopNav'
 import { CharacterCard } from '@/components/character/CharacterCard'
-import { PillButton } from '@/components/ui/primitives'
+import { PillButton, SectionTitle } from '@/components/ui/primitives'
 import {
   deleteCharacter,
   listCharacters,
@@ -94,11 +94,7 @@ export function CreationListPage() {
         {!isLoading && !isError && !isEmpty && (
           <div className="flex w-full max-w-[1512px] flex-col gap-12">
             <section className="flex flex-col gap-2">
-              <div className="flex items-center p-3">
-                <h2 className="font-misans-semibold text-[16px] text-black/30">
-                  草稿箱 {draftList.length}
-                </h2>
-              </div>
+              <SectionTitle>草稿箱 {draftList.length}</SectionTitle>
               <div className="flex flex-wrap items-center gap-4">
                 <button
                   onClick={() => createMut.mutate()}
@@ -122,11 +118,7 @@ export function CreationListPage() {
             </section>
 
             <section className="flex flex-col gap-2">
-              <div className="flex h-[45px] items-center p-3">
-                <h2 className="font-misans-semibold text-[16px] text-black/30">
-                  已发布 {publishedList.length}
-                </h2>
-              </div>
+              <SectionTitle>已发布 {publishedList.length}</SectionTitle>
               {publishedList.length === 0 ? (
                 <p className="font-misans px-3 text-[14px] text-black/30">还没有发布的角色</p>
               ) : (

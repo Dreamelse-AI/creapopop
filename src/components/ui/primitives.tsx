@@ -50,3 +50,18 @@ export function Card({
     </div>
   )
 }
+
+// 统一小标题（各表单分区/列表分组标题）。样式集中在此，后续单独调参数只改这里。
+export function SectionTitle({
+  children,
+  className = '',
+}: {
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <div className={`flex items-center px-3 py-1.5 ${className}`}>
+      <h2 className="font-misans text-[16px] text-black/30">{children}</h2>
+    </div>
+  )
+}

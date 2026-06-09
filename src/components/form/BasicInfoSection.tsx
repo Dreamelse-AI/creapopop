@@ -12,6 +12,7 @@ import {
   MAX_PERSONALITY_LEN,
 } from '@/data/constants'
 import type { Gender, Species, Visibility } from '@/types/character'
+import { SectionTitle } from '@/components/ui/primitives'
 
 // 基本信息表单 — 严格对齐 Figma 框架（卡片式字段，点击触发交互），尺寸弹性。
 export function BasicInfoSection() {
@@ -47,14 +48,6 @@ export function BasicInfoSection() {
         onChange={(anonymousTags) => patch({ anonymousTags })}
       />
       <VisibilityCard value={data.visibility} onChange={(visibility) => patch({ visibility })} />
-    </div>
-  )
-}
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-center px-3 py-1.5">
-      <h2 className="font-misans text-[16px] text-black/30">{children}</h2>
     </div>
   )
 }

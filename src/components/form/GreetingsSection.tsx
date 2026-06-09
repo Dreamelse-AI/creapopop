@@ -1,4 +1,5 @@
 import { useDraftStore } from '@/store/draftStore'
+import { SectionTitle } from '@/components/ui/primitives'
 
 // 开场白：聊天气泡形式（圆角药丸 + 左下尾巴）。
 // 已填气泡可编辑/清空(×)，末尾空气泡用于新增(+)。
@@ -20,9 +21,7 @@ export function GreetingsSection() {
 
   return (
     <div className="flex w-[600px] flex-col gap-2">
-      <div className="px-3 py-1.5">
-        <h2 className="font-misans-semibold text-[16px] text-black/30">角色开场白</h2>
-      </div>
+      <SectionTitle>角色开场白</SectionTitle>
 
       {data.greetings.map((g, i) => (
         <Bubble key={i}>

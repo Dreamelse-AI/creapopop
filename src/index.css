@@ -66,3 +66,14 @@ body {
   font-family: 'Black Han Sans', 'MiSans', system-ui, sans-serif;
   font-weight: 400;
 }
+
+/* 全局隐藏滚动条（保留滚动能力）。设计要求列表不出现滚动条。 */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none; /* Chrome/Safari */
+}
