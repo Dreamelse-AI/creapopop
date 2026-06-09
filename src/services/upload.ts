@@ -1,4 +1,4 @@
-import { arcaPost } from './apiClient'
+import { apiUrl, arcaPost, getToken } from './apiClient'
 
 /**
  * 文件上传 — 对齐 Arca 存储范式。
@@ -6,6 +6,7 @@ import { arcaPost } from './apiClient'
  * 对应 arca.api: POST /file/tos_credential (GetTosUploadCredentialReq) → GetTosUploadCredentialResp
  * 流程：1) 向 Arca 拿火山 TOS 临时凭证 → 2) 客户端直传 TOS → 3) 业务数据只存 url
  *
+ * Arca 不可用时回退临时后端 POST /api/file/upload（base64 落盘）。
  * 调用方（ImageSection）不需要改动，接口签名保持不变。
  */
 export interface UploadedMedia {
@@ -67,9 +68,40 @@ async function putToTos(cred: TosCredential, objectKey: string, file: File): Pro
   return url
 }
 
+/** 回退：临时后端 base64 上传 */
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+async function uploadViaLocalServer(file: File): Promise<UploadedMedia> {
+  const dataUrl = await fileToDataUrl(file)
+  const res = await fetch(apiUrl('/api/file/upload'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
+    },
+    body: JSON.stringify({ dataUrl }),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(json.error || `上传失败 (${res.status})`)
+  if (!json.url) throw new Error('上传未返回 url')
+  return { url: json.url as string, width: json.width, height: json.height }
+}
+
 export async function uploadImage(file: File): Promise<UploadedMedia> {
-  const cred = await getTosCredential()
-  const objectKey = generateObjectKey(file)
-  const url = await putToTos(cred, objectKey, file)
-  return { url }
+  // 优先 Arca TOS 直传，失败回退临时后端
+  try {
+    const cred = await getTosCredential()
+    const objectKey = generateObjectKey(file)
+    const url = await putToTos(cred, objectKey, file)
+    return { url }
+  } catch {
+    return uploadViaLocalServer(file)
+  }
 }
