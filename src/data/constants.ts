@@ -59,17 +59,18 @@ export const INTRO_SECTIONS = [
   { key: 'greetings', label: '开场白', locked: false },
 ] as const
 
-// 介绍页"选择展示内容"清单（来自设计稿，主图固定 + 可勾选字段）
+// 介绍页"选择展示内容"清单（来自设计稿）
+// locked=true：默认选中且不可取消（名字~性格 共7项）
+// locked=false：默认选中但可取消（开场白）
 export const INTRO_CONTENT_FIELDS = [
-  { key: 'name', label: '名字' },
-  { key: 'tags', label: '标签' },
-  { key: 'species', label: '物种' },
-  { key: 'gender', label: '性别' },
-  { key: 'voice', label: '音色' },
-  { key: 'intro', label: '简介' },
-  { key: 'personality', label: '性格' },
-  { key: 'details', label: '更多细节' },
-  { key: 'greetings', label: '开场白' },
+  { key: 'name', label: '名字', locked: true },
+  { key: 'tags', label: '标签', locked: true },
+  { key: 'species', label: '物种', locked: true },
+  { key: 'gender', label: '性别', locked: true },
+  { key: 'voice', label: '音色', locked: true },
+  { key: 'intro', label: '简介', locked: true },
+  { key: 'personality', label: '性格', locked: true },
+  { key: 'greetings', label: '开场白', locked: false },
 ] as const
 
 // 介绍页 UI 模版（首个为默认占位，其余为预设缩略图）

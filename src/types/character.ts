@@ -14,6 +14,7 @@ export interface CharacterImage {
 export interface IntroPage {
   template: IntroTemplate
   customHtml?: string
+  keywords?: string[]
   visibleSections: string[]
 }
 
@@ -69,7 +70,7 @@ export function createEmptyCharacter(id: string, ownerEmail: string): Character 
     greetings: [],
     introPage: {
       template: 'none',
-      visibleSections: ['name', 'tags', 'intro'],
+      visibleSections: ['name', 'tags', 'species', 'gender', 'voice', 'intro', 'personality', 'greetings'],
     },
     dynamics: [],
     createdAt: now,

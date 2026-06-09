@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useDraftStore } from '@/store/draftStore'
 import { INTRO_CONTENT_FIELDS, INTRO_TEMPLATES, DETAIL_FIELDS } from '@/data/constants'
 import { generateIntroPageHtml } from '@/services/aiIntroPage'
@@ -19,6 +19,8 @@ export function IntroPageSection() {
     patch({ introPage: { ...introPage, template } })
 
   const toggleField = (key: string) => {
+    const field = INTRO_CONTENT_FIELDS.find((f) => f.key === key)
+    if (field?.locked) return
     const has = introPage.visibleSections.includes(key)
     const visibleSections = has
       ? introPage.visibleSections.filter((s) => s !== key)
@@ -27,13 +29,13 @@ export function IntroPageSection() {
   }
 
   const runGenerate = async () => {
-    const prompt = vibe.trim() || data.tags.join('、')
+    const prompt = vibe.trim()
     if (!prompt || generating) return
     setGenerating(true)
     setError(null)
     try {
-      const html = await generateIntroPageHtml(data, prompt)
-      patch({ introPage: { ...introPage, customHtml: html } })
+      const { keywords, html } = await generateIntroPageHtml(data, prompt)
+      patch({ introPage: { ...introPage, customHtml: html, keywords } })
       setVibe('')
     } catch (e) {
       setError(e instanceof Error ? e.message : '生成失败')
@@ -72,14 +74,14 @@ export function IntroPageSection() {
 
       {/* 中：Agent 生成卡片 */}
       <AgentCard
-        tags={data.tags}
+        keywords={introPage.keywords ?? []}
         vibe={vibe}
         setVibe={setVibe}
         generating={generating}
         error={error}
         hasHtml={!!introPage.customHtml}
         onGenerate={runGenerate}
-        onClear={() => patch({ introPage: { ...introPage, customHtml: undefined } })}
+        onClear={() => patch({ introPage: { ...introPage, customHtml: undefined, keywords: [] } })}
       />
 
       {/* 右：选择展示内容 */}
@@ -102,12 +104,13 @@ export function IntroPageSection() {
           </div>
         </div>
 
-        {/* 可勾选字段：基础字段 + 更多细节 */}
+        {/* 可勾选字段：基础字段(7项默认选中锁定 + 开场白可取消) + 更多细节(填了才可选) */}
         {INTRO_CONTENT_FIELDS.map((f) => (
           <CheckRow
             key={f.key}
             label={f.label}
-            checked={introPage.visibleSections.includes(f.key)}
+            checked={f.locked || introPage.visibleSections.includes(f.key)}
+            locked={f.locked}
             onToggle={() => toggleField(f.key)}
           />
         ))}
@@ -128,23 +131,31 @@ export function IntroPageSection() {
   )
 }
 
-// 勾选行：选中=黑底白勾，未选=浅灰，禁用(未填)=20% 透明
+// 勾选行四态：
+//  locked  默认选中、不可取消（名字~性格 7项）：黑底白勾，点击无效
+//  checked 选中可取消（开场白 / 已填的细节）：黑底白勾
+//  普通未选：浅灰圈
+//  disabled 未填写内容：整行 20% 置灰、不可点
 function CheckRow({
   label,
   checked,
+  locked = false,
   disabled = false,
   onToggle,
 }: {
   label: string
   checked: boolean
+  locked?: boolean
   disabled?: boolean
   onToggle: () => void
 }) {
   return (
     <button
       onClick={onToggle}
-      disabled={disabled}
-      className="flex h-12 w-[284px] shrink-0 items-center gap-3 rounded-[16px] bg-white pl-3 pr-1.5"
+      disabled={disabled || locked}
+      className={`flex h-12 w-[284px] shrink-0 items-center gap-3 rounded-[16px] bg-white pl-3 pr-1.5 ${
+        disabled ? 'opacity-20' : ''
+      }`}
     >
       <span className="flex items-center justify-center p-1.5">
         <span
@@ -157,20 +168,14 @@ function CheckRow({
           )}
         </span>
       </span>
-      <span
-        className={`font-misans-medium truncate text-[16px] ${
-          disabled ? 'text-black/20' : 'text-black/50'
-        }`}
-      >
-        {label}
-      </span>
+      <span className="font-misans-medium truncate text-[16px] text-black/50">{label}</span>
     </button>
   )
 }
 
 // 中间 Agent 卡片：顶部渐变(关键词+生成) + 分隔 + agent气泡 + 分隔 + 输入栏
 function AgentCard({
-  tags,
+  keywords,
   vibe,
   setVibe,
   generating,
@@ -179,7 +184,7 @@ function AgentCard({
   onGenerate,
   onClear,
 }: {
-  tags: string[]
+  keywords: string[]
   vibe: string
   setVibe: (v: string) => void
   generating: boolean
@@ -188,6 +193,16 @@ function AgentCard({
   onGenerate: () => void
   onClear: () => void
 }) {
+  // 附件 UI（占位）：收集用户选择的文件，展示为可移除 chip。
+  // 真正「把附件内容喂给 Claude」需后端做文件解析，见 docs/SPEC.md 联调待办，本期仅前端入口。
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [attachments, setAttachments] = useState<File[]>([])
+  const addFiles = (files: FileList | null) => {
+    if (!files?.length) return
+    setAttachments((prev) => [...prev, ...Array.from(files)].slice(0, 10))
+  }
+  const removeAttachment = (idx: number) =>
+    setAttachments((prev) => prev.filter((_, i) => i !== idx))
   return (
     <div className="flex h-full min-w-[300px] flex-1 flex-col justify-between rounded-t-[30px] border border-black/[0.06] bg-white pb-4">
       {/* 顶部渐变：关键词 + 生成按钮 */}
@@ -198,8 +213,8 @@ function AgentCard({
               关键词：
             </span>
             <div className="flex gap-2 overflow-hidden">
-              {tags.length > 0 ? (
-                tags.map((t) => (
+              {keywords.length > 0 ? (
+                keywords.map((t) => (
                   <span
                     key={t}
                     className="shrink-0 rounded-[100px] bg-black/[0.04] px-2 py-1.5 font-misans-semibold text-[14px] text-black/50"
@@ -208,7 +223,7 @@ function AgentCard({
                   </span>
                 ))
               ) : (
-                <span className="font-misans text-[14px] text-black/30">暂无标签</span>
+                <span className="font-misans text-[14px] text-black/30">生成后展示风格关键词</span>
               )}
             </div>
           </div>
@@ -252,7 +267,49 @@ function AgentCard({
       {/* 底部输入栏 */}
       <div className="flex flex-col gap-2.5">
         <div className="h-px w-full bg-black/[0.06]" />
-        <div className="flex items-end gap-9 p-[18px]">
+
+        {/* 已选附件列表（占位，待后端解析喂给 Claude） */}
+        {attachments.length > 0 && (
+          <div className="flex flex-wrap gap-2 px-[18px]">
+            {attachments.map((f, i) => (
+              <span
+                key={`${f.name}_${i}`}
+                className="flex max-w-[180px] items-center gap-1.5 rounded-[10px] bg-black/[0.04] py-1.5 pl-2.5 pr-1.5"
+                title={f.name}
+              >
+                <span className="truncate font-misans-medium text-[13px] text-black/60">{f.name}</span>
+                <button
+                  onClick={() => removeAttachment(i)}
+                  className="flex size-4 shrink-0 items-center justify-center rounded-full bg-black/10 text-[10px] leading-none text-black/50"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="flex items-end gap-3 p-[18px]">
+          {/* 附件入口：图片/txt/doc/pdf/音乐 */}
+          <input
+            ref={fileRef}
+            type="file"
+            multiple
+            accept="image/*,.txt,.doc,.docx,.pdf,audio/*"
+            className="hidden"
+            onChange={(e) => {
+              addFiles(e.target.files)
+              e.target.value = ''
+            }}
+          />
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={generating}
+            title="添加附件（图片 / txt / doc / pdf / 音乐）"
+            className="flex size-7 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-[20px] leading-none text-black/40 disabled:opacity-50"
+          >
+            +
+          </button>
           <textarea
             value={vibe}
             onChange={(e) => setVibe(e.target.value)}

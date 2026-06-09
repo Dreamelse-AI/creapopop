@@ -114,13 +114,12 @@ function IntroPreview() {
             <p className="text-sm text-black/70">{data.personality}</p>
           </div>
         )}
-        {sections.includes('details') &&
-          DETAIL_FIELDS.filter((f) => data.details[f.key]).map((f) => (
-            <div key={f.key}>
-              <p className="text-xs font-medium text-black/40">{f.label}</p>
-              <p className="text-sm text-black/70">{data.details[f.key]}</p>
-            </div>
-          ))}
+        {DETAIL_FIELDS.filter((f) => sections.includes(f.key) && data.details[f.key]).map((f) => (
+          <div key={f.key}>
+            <p className="text-xs font-medium text-black/40">{f.label}</p>
+            <p className="text-sm text-black/70">{data.details[f.key]}</p>
+          </div>
+        ))}
         {sections.includes('greetings') && data.greetings.filter(Boolean).length > 0 && (
           <div>
             <p className="text-xs font-medium text-black/40">开场白</p>

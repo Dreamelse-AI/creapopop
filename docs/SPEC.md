@@ -203,4 +203,12 @@ CREATE INDEX idx_creapopop_owner_status
 3. 文件上传联调时换成 Arca `POST /file/tos_credential` + 火山 TOS 直传（前端入口 `src/services/upload.ts` 不变）
 4. 新部署子域名 + 服务器信息（你后续提供）
 5. 音色/音乐 mock 数据的具体内容（已造占位，见 `server/routes/mock.cjs`）
+6. **介绍页美化 — 附件喂给 Claude（需后端配合，当前仅前端入口占位）**：
+   介绍页 agent 对话支持上传附件（图片 / txt / doc / pdf / 音乐），目的是把附件内容作为生成依据交给 Claude。
+   三类附件处理方式不同，需后端提供解析能力后前端再接：
+   - **图片**：以多模态 image block 形式塞进 Claude messages（`/api/ai/intro-page` 需扩展为支持 image 内容块）。
+   - **文本类（txt / doc / pdf）**：后端抽取为纯文本后拼进 prompt。txt 前端可直接读；doc/pdf 必须后端解析（前端无法可靠解析）。
+   - **音频（音乐）**：Claude 不能读音频，仅作为角色资源存储；生成时最多附带「有背景音乐」的元信息。
+   前端现状：`IntroPageSection` 的 AgentCard 已有「＋」附件入口与已选列表 UI（占位），未真正上传/解析；
+   联调时把附件流程接入 `/api/ai/intro-page`（或新增解析接口），并复用 `src/services/upload.ts` 存储原始文件。
 
