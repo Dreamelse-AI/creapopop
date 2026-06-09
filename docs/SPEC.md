@@ -1,14 +1,16 @@
-# POPOP 创作页 — 规格与技术方案（评审稿 v0.2）
+# POPOP 创作页 — 规格与技术方案（评审稿 v0.3）
 
 > 状态：评审中。本文件是创作页这一期的需求规格 + 技术方案，也是后续与专业后端联调的契约草案。
 > 范围：创作页全部 9 块能力（账号 / 草稿箱 / 表单 / AI生图 / 音色 / 介绍页美化 / 预览 / 动态 / 发布）。
+> §3 接口契约以 `server/index.cjs` 路由表为准；联调对接 Arca 见 arca-integration skill。
 
 ## 0. 关键决策（已与产品对齐）
 
 | # | 决策 | 说明 |
 |---|---|---|
-| 账号 | creapopop 独立 | 邮箱+密码登录，密码 mock `123456`；所有数据按 email 隔离；预留验证码扩展 |
+| 账号 | creapopop 独立 | 邮箱+验证码登录，mock 阶段固定码 `123456`（不真发邮件）；所有数据按 email 隔离 |
 | 存储 | PG 表 | 参考 newcreation `creation_projects`（payload JSONB + user 隔离 + 软删）；地址走环境变量，联调时切 Arca |
+| 图片存储 | 对象存储范式 | 已对齐 Arca：图片走 `/api/file/upload` 落盘返回短 url，业务数据只存 url 不存 base64；联调时换 TOS 直传 |
 | 三类模型 | 复用 newcreation | 生图=APIMart images；通用聊天=Ark/OpenRouter；代码模型=APIMart Claude Messages |
 | 介绍页渲染 | iframe 沙箱 | Claude 生成的 HTML 放隔离 iframe，防注入；与 newcreation `CharacterShowcaseSheet` 一致 |
 | 审核 | mock | 提交即过，留审核钩子 |
@@ -62,7 +64,7 @@ interface Character {
   anonymousTags: string[]            // 匿名身份标签，≤3
 
   // ② 形象（上传图集 = 虚拟形象库，复用到动态）
-  images: { id: string; url: string; source: 'upload'|'ai' }[]  // ≤9
+  images: { id: string; url: string; source: 'upload'|'ai' }[]  // url 为短链(/uploads/.. 或 AI 图 http url)
   primaryImageId: string | null
 
   // ③ 更多细节
@@ -98,29 +100,43 @@ interface Character {
 
 ## 3. API 契约（临时后端，联调时对齐 Arca）
 
-所有接口走临时 Node 后端（端口 9527），前端只调本后端，模型 key 全在后端。
-鉴权：登录返回 token，后续请求带 `Authorization: Bearer <token>`，后端解析出 email 做隔离。
+> ⚠️ 本节以 `server/index.cjs` 路由表为准（代码是唯一权威）。联调对接 Arca 时，
+> 逐一对照 `~/readonly/common_idl-i18n/arca/api/arca.api` 做映射替换，遵循 arca-integration skill。
+
+所有接口走临时 Node 后端（容器内 9527，宿主映射 127.0.0.1:9528），前端只调本后端，模型 key 全在后端。
+鉴权：登录返回 token，后续请求带 `Authorization: Bearer <token>`，后端 HMAC 解析出 email 做隔离。
 
 ```
-# 账号（creapopop 独立）
-POST /api/auth/login      { email, password }        → { token, email }
-POST /api/auth/logout     {}                          → { success }
+# 账号（creapopop 独立，邮箱+验证码；mock 阶段固定码 123456，不真发邮件）
+POST /api/auth/send-code  { email }                    → { success, ttl, mockCode }
+POST /api/auth/login      { email, code }              → { token, email }   // 兼容旧入参 password
+POST /api/auth/logout     {}                            → { success }        // 无状态，前端清 token
 
-# 角色 CRUD（按 email 隔离，PG creapopop_characters 表）
-POST /api/character/save  { id?, ...Character }        → { success, character }
-GET  /api/character/list  ?status=draft|published      → { characters: [...] }
-GET  /api/character/get   ?id=                         → { character }
-POST /api/character/delete{ id }                        → { success }    // 软删
-POST /api/character/publish{ id }                       → { success }    // mock审核即过
+# 角色 CRUD（按 email 隔离，PG creapopop_characters 表，未配 PG 时回退 .data/characters.json）
+POST /api/character/save   { id?, ...Character }        → { success, character }  // 无 id 则后端生成
+GET  /api/character/list   ?status=draft|published      → { success, characters: [...] }
+GET  /api/character/get    ?id=                         → { success, character }
+POST /api/character/delete { id }                       → { success }    // 软删 deleted_at
+POST /api/character/publish { id }                      → { success, character }  // mock审核即过
 
-# AI 能力（代理三类模型）
-POST /api/ai/image        { prompt, ... }              → 复用 apimart images
-POST /api/ai/chat         { messages }                 → 复用 Ark/OpenRouter（试聊）
-POST /api/ai/intro-page   { messages }                 → 复用 apimart Claude /v1/messages（介绍页HTML）
+# 文件上传（已对齐 Arca 存储范式：业务数据只存短 url，不存 base64）
+POST /api/file/upload      { dataUrl, ext? }            → { url, width?, height? }  // 落 .data/uploads
+GET  /uploads/<hash>/<file>                             → 图片字节 + 1年 immutable 缓存
+# 注：Arca 正式范式为 POST /file/tos_credential 拿火山 TOS 临时凭证 → 客户端直传 → 存 Media.url；
+#     联调时把本接口替换为该流程，前端封装入口 src/services/upload.ts 不变，调用方无需改动。
+
+# AI 能力（代理三类模型，key 在后端）
+POST /api/ai/image/submit  { model, prompt, size, n }   → { ...task }   // APIMart 异步生图，返回 task id
+GET  /api/ai/image/task/:id                             → { ...status } // 轮询任务，done 时含图片 url
+POST /api/ai/chat          { messages, system?, ... }   → { text }       // Gemini 2.5 Flash 试聊（非流式）
+POST /api/ai/intro-page    { messages, model?, max_tokens? } → Anthropic messages 原样透传  // 介绍页 HTML
 
 # Mock 数据
-GET  /api/mock/voices                                  → 音色库
-GET  /api/mock/music                                   → 音乐库
+GET  /api/mock/voices                                  → { success, voices }
+GET  /api/mock/music                                   → { success, music }
+
+# 健康检查
+GET  /health                                           → { status: 'ok' }
 ```
 
 PG 表（参考 newcreation `creation_projects`）：
@@ -161,7 +177,7 @@ CREATE INDEX idx_creapopop_owner_status
 | 样式 | Tailwind v4 | 对齐旧项目 |
 | 后端 | Node 原生 http | 轻量、零框架，对齐旧项目 server/ 结构 |
 | 持久化 | PG（payload JSONB） | 参考 `creation_projects` |
-| 鉴权 | 自建邮箱+密码(mock) | creapopop 独立，不复用 Arca 鉴权 |
+| 鉴权 | 自建邮箱+验证码(mock) | creapopop 独立，不复用 Arca 鉴权 |
 | 介绍页渲染 | iframe sandbox | 防 AI 生成 HTML 的注入风险 |
 | 部署 | Docker + GitHub Actions → 新子域 | 对齐旧项目，新子域待定 |
 
@@ -184,7 +200,7 @@ CREATE INDEX idx_creapopop_owner_status
 
 1. 角色介绍页 HTML 的具体 prompt 与模板，P1 实现时细化（参考旧项目 Claude 调用）
 2. Arca 正式的角色/草稿表接口与字段，联调时对齐替换临时后端
-3. 新部署子域名 + 服务器信息（你后续提供）
-4. 音色/音乐 mock 数据的具体内容（可由我先造一批占位）
-5. 邮箱验证码登录（后续迭代）
+3. 文件上传联调时换成 Arca `POST /file/tos_credential` + 火山 TOS 直传（前端入口 `src/services/upload.ts` 不变）
+4. 新部署子域名 + 服务器信息（你后续提供）
+5. 音色/音乐 mock 数据的具体内容（已造占位，见 `server/routes/mock.cjs`）
 
