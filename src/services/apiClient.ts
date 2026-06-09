@@ -12,6 +12,12 @@ function detectBasePath(): string {
 
 const _base = detectBasePath()
 
+/**
+ * Arca 正式后端 baseURL（通过环境变量注入，禁止硬编码）。
+ * 开发期通过 vite proxy 转发 /arca → preview 域名。
+ */
+const ARCA_BASE = import.meta.env.VITE_API_BASE_URL || ''
+
 const TOKEN_KEY = 'creapopop_token'
 
 export function getToken(): string | null {
@@ -28,6 +34,14 @@ export function clearToken(): void {
 
 export function apiUrl(path: string): string {
   return _base ? _base + path : path
+}
+
+/**
+ * 对应 arca.api 的请求 — 拼接 Arca baseURL。
+ * 开发期走 vite proxy（/arca → preview），生产构建时 VITE_API_BASE_URL 为完整域名。
+ */
+export function arcaUrl(path: string): string {
+  return ARCA_BASE + path
 }
 
 function authHeaders(): Record<string, string> {
@@ -71,4 +85,30 @@ export class ApiError extends Error {
     super(`API ${status}: ${body.slice(0, 200)}`)
     this.name = 'ApiError'
   }
+}
+
+/**
+ * Arca 后端 POST 封装（大部分 Arca 接口是 POST）。
+ * 对应 arca.api 的鉴权 @server(jwt: Auth, authType: apiKey)。
+ * Authorization: Bearer <jwt_token>
+ */
+export async function arcaPost<T>(path: string, body?: unknown): Promise<T> {
+  const res = await fetch(arcaUrl(path), {
+    method: 'POST',
+    headers: authHeaders(),
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  })
+  const text = await res.text()
+  if (!res.ok) throw new ApiError(res.status, text)
+  return parseJson<T>(text, path)
+}
+
+/**
+ * Arca 后端 GET 封装（少数接口如 /character/page_config）。
+ */
+export async function arcaGet<T>(path: string): Promise<T> {
+  const res = await fetch(arcaUrl(path), { headers: authHeaders() })
+  const text = await res.text()
+  if (!res.ok) throw new ApiError(res.status, text)
+  return parseJson<T>(text, path)
 }
