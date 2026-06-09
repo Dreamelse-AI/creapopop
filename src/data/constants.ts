@@ -31,6 +31,12 @@ export const GENDER_OPTIONS = [
 
 // 更多细节字段（来自设计稿，含 emoji 前缀）
 export const DETAIL_FIELDS = [
+  { key: 'age', label: '年龄', emoji: '🎂' },
+  { key: 'birthday', label: '生日', emoji: '🎉' },
+  { key: 'zodiac', label: '星座', emoji: '⭐' },
+  { key: 'mbti', label: 'MBTI', emoji: '🧠' },
+  { key: 'bloodType', label: '血型', emoji: '🩸' },
+  { key: 'height', label: '身高', emoji: '📏' },
   { key: 'birthplace', label: '出生地', emoji: '👶🏻' },
   { key: 'residence', label: '居住地', emoji: '📍' },
   { key: 'occupation', label: '职业', emoji: '💼' },
@@ -47,6 +53,9 @@ export const DETAIL_FIELDS = [
   { key: 'family', label: '家庭成员', emoji: '👩‍👩‍👧‍👦' },
   { key: 'relationships', label: '社交关系', emoji: '👭' },
   { key: 'worldview', label: '特殊背景/世界观', emoji: '🧿' },
+  { key: 'hiddenSide', label: '隐藏面', emoji: '🎭' },
+  { key: 'currentState', label: '最近状态', emoji: '📡' },
+  { key: 'trendingSlang', label: '流行语参考', emoji: '🗣️' },
   { key: 'wishlist', label: '愿望清单', emoji: '💝' },
 ] as const
 

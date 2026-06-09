@@ -3,6 +3,7 @@ import { useDraftStore } from '@/store/draftStore'
 import { DETAIL_FIELDS } from '@/data/constants'
 import { SandboxHtml } from './SandboxHtml'
 import { sendChatMessage, type ChatMessage } from '@/services/aiChat'
+import type { MessageItem } from '@/prompts/types'
 
 type PreviewTab = 'intro' | 'chat' | 'dynamics'
 
@@ -150,11 +151,10 @@ function ChatPreview() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // 开场白作为对方首条消息预填
   const firstGreeting = data.greetings.filter(Boolean)[0]
   const display: ChatMessage[] =
     messages.length === 0 && firstGreeting
-      ? [{ role: 'assistant', content: firstGreeting }]
+      ? [{ role: 'assistant', content: firstGreeting, items: [{ type: 'text', data: { content: firstGreeting } }] }]
       : messages
 
   const send = async () => {
@@ -166,8 +166,8 @@ function ChatPreview() {
     setLoading(true)
     setError(null)
     try {
-      const reply = await sendChatMessage(data, next)
-      setMessages([...next, { role: 'assistant', content: reply }])
+      const { text: raw, items } = await sendChatMessage(data, next)
+      setMessages([...next, { role: 'assistant', content: raw, items }])
     } catch (e) {
       setError(e instanceof Error ? e.message : '对话失败')
     } finally {
@@ -177,27 +177,12 @@ function ChatPreview() {
 
   return (
     <div className="flex size-full flex-col bg-[#fbf2d8]">
-      {/* 消息区 */}
       <div className="flex flex-1 flex-col gap-3 overflow-auto py-4">
         <p className="text-center font-misans text-[12px] text-black/30">昨天 23:30</p>
 
         {display.map((m, i) =>
           m.role === 'assistant' ? (
-            <div key={i} className="flex items-start gap-2 px-4">
-              <Avatar cover={cover} />
-              <div className="relative max-w-[240px]">
-                <div className="rounded-[24px] rounded-bl-[4px] bg-white px-4 py-2.5">
-                  <p className="font-misans-medium text-[16px] leading-[22px] text-black/90">
-                    {m.content}
-                  </p>
-                </div>
-                <img
-                  src="/assets/chat-tail-white.svg"
-                  alt=""
-                  className="absolute bottom-0 left-0 h-[8.5px] w-[18.75px]"
-                />
-              </div>
-            </div>
+            <AssistantBubbles key={i} items={m.items} fallback={m.content} cover={cover} />
           ) : (
             <div key={i} className="flex justify-end px-4">
               <div className="relative max-w-[240px]">
@@ -220,7 +205,6 @@ function ChatPreview() {
         {error && <p className="px-4 font-misans text-[14px] text-red-500">{error}</p>}
       </div>
 
-      {/* 底部输入栏：输入 + 发送（无语音输入） */}
       <div className="px-4 pb-4">
         <div className="flex h-[60px] items-center gap-2 rounded-[24px] bg-white px-[18px]">
           <input
@@ -258,4 +242,100 @@ function Avatar({ cover }: { cover: string }) {
       )}
     </div>
   )
+}
+
+// 多气泡渲染：解析 JSON 数组后的多条消息
+function AssistantBubbles({
+  items,
+  fallback,
+  cover,
+}: {
+  items?: MessageItem[]
+  fallback: string
+  cover: string
+}) {
+  const bubbles = items && items.length > 0 ? items : [{ type: 'text' as const, data: { content: fallback } }]
+
+  return (
+    <div className="flex flex-col gap-2">
+      {bubbles.map((item, idx) => (
+        <div key={idx} className="flex items-start gap-2 px-4">
+          {idx === 0 && <Avatar cover={cover} />}
+          {idx !== 0 && <div className="w-12 shrink-0" />}
+          <div className="relative max-w-[240px]">
+            <BubbleContent item={item} />
+            {idx === bubbles.length - 1 && (
+              <img
+                src="/assets/chat-tail-white.svg"
+                alt=""
+                className="absolute bottom-0 left-0 h-[8.5px] w-[18.75px]"
+              />
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function BubbleContent({ item }: { item: MessageItem }) {
+  switch (item.type) {
+    case 'text':
+      return (
+        <div className="rounded-[24px] rounded-bl-[4px] bg-white px-4 py-2.5">
+          <p className="font-misans-medium text-[16px] leading-[22px] text-black/90">
+            {item.data.content}
+          </p>
+        </div>
+      )
+    case 'voice':
+      return (
+        <div className="flex items-center gap-2 rounded-[24px] rounded-bl-[4px] bg-white px-4 py-2.5">
+          <span className="text-[14px]">🎤</span>
+          <p className="font-misans-medium text-[14px] leading-[20px] text-black/70 italic">
+            {item.data.content}
+          </p>
+        </div>
+      )
+    case 'sticker':
+      return (
+        <div className="flex items-center gap-1 rounded-[24px] rounded-bl-[4px] bg-white px-4 py-2.5">
+          <span className="text-[24px]">😊</span>
+          <p className="font-misans text-[12px] text-black/50">{item.data.emotion}</p>
+        </div>
+      )
+    case 'image':
+      return (
+        <div className="rounded-[16px] bg-white p-2">
+          <div className="flex h-[120px] w-full items-center justify-center rounded-[12px] bg-black/5">
+            <span className="text-[12px] text-black/40">
+              [{item.data.category === 'selfie' ? '自拍' : '照片'}] {item.data.description}
+            </span>
+          </div>
+        </div>
+      )
+    case 'state_update':
+      return (
+        <div className="rounded-[16px] bg-purple-50 px-3 py-2">
+          <p className="font-misans text-[12px] text-purple-600">
+            {item.data.emotion} · {item.data.status}
+          </p>
+        </div>
+      )
+    case 'html_file':
+      return (
+        <div className="rounded-[16px] bg-white px-4 py-3">
+          <p className="font-misans-medium text-[14px] text-black/90">{item.data.file_name}</p>
+          <p className="font-misans text-[12px] text-black/50">{item.data.description}</p>
+        </div>
+      )
+    default:
+      return (
+        <div className="rounded-[24px] rounded-bl-[4px] bg-white px-4 py-2.5">
+          <p className="font-misans-medium text-[16px] leading-[22px] text-black/90">
+            {item.data.content || JSON.stringify(item.data)}
+          </p>
+        </div>
+      )
+  }
 }
