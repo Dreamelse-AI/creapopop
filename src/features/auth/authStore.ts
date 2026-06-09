@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { arcaPost, clearToken, getToken, setToken } from '@/services/apiClient'
+import { arcaPost, clearToken, getToken, postJson, setToken } from '@/services/apiClient'
 
 /**
  * 对应 arca.api: POST /auth/email/sessions → LoginResp
@@ -15,6 +15,12 @@ interface ArcaLoginResp {
  */
 interface ArcaEmailCodeResp {
   message: string
+}
+
+/** 临时后端回退响应 */
+interface LocalLoginResp {
+  token: string
+  email: string
 }
 
 interface AuthState {
@@ -40,7 +46,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   sendCode: async (email) => {
     set({ sending: true, error: null })
     try {
-      await arcaPost<ArcaEmailCodeResp>('/auth/email/verification-codes', { email })
+      // 优先走 Arca，失败回退临时后端
+      try {
+        await arcaPost<ArcaEmailCodeResp>('/auth/email/verification-codes', { email })
+      } catch {
+        await postJson('/api/auth/send-code', { email })
+      }
       set({ sending: false })
       return true
     } catch {
@@ -52,8 +63,16 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (email, code) => {
     set({ loading: true, error: null })
     try {
-      const res = await arcaPost<ArcaLoginResp>('/auth/email/sessions', { email, code })
-      setToken(res.jwt_token)
+      // 优先走 Arca，失败回退临时后端
+      let token: string
+      try {
+        const res = await arcaPost<ArcaLoginResp>('/auth/email/sessions', { email, code })
+        token = res.jwt_token
+      } catch {
+        const res = await postJson<LocalLoginResp>('/api/auth/login', { email, code })
+        token = res.token
+      }
+      setToken(token)
       localStorage.setItem(EMAIL_KEY, email)
       set({ email, isAuthed: true, loading: false })
       return true

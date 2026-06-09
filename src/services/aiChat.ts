@@ -41,18 +41,20 @@ export function parseAIResponse(raw: string): MessageItem[] {
 export async function sendChatMessage(
   character: Character,
   history: ChatMessage[],
-): Promise<string> {
+  locale: PromptLocale = 'ko',
+): Promise<{ text: string; items: MessageItem[] }> {
   const res = await fetch(apiUrl('/api/ai/chat'), {
     method: 'POST',
     headers: headers(),
     body: JSON.stringify({
       model: 'gemini-2.5-flash',
-      system: buildSystemPrompt(character),
-      messages: history,
+      system: buildSystemPrompt(character, locale),
+      messages: history.map((m) => ({ role: m.role, content: m.content })),
       temperature: 0.8,
     }),
   })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(json.error || `对话失败 (${res.status})`)
-  return json.text || ''
+  const raw = json.text || ''
+  return { text: raw, items: parseAIResponse(raw) }
 }
