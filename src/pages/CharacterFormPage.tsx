@@ -82,7 +82,7 @@ export function CharacterFormPage() {
       <aside className="flex h-full w-[204px] shrink-0 flex-col border-r border-black/[0.06] bg-white">
         <div className="flex items-center gap-1 p-4 shadow-[inset_0px_-1px_0px_0px_rgba(0,0,0,0.06)]">
           <button onClick={() => navigate('/')} className="flex size-9 items-center justify-center" title="返回">
-            <img src="/assets/icon-back.svg" alt="返回" className="h-2 w-3.5 -rotate-90" />
+            <img src="/assets/icon-back.svg" alt="返回" className="h-2 w-3.5 rotate-90" />
           </button>
           <div className="flex flex-1 flex-col gap-1">
             <span className="font-misans truncate text-[16px] text-black">{data.name || '未命名角色'}</span>
@@ -98,7 +98,7 @@ export function CharacterFormPage() {
             className="flex flex-col py-4 shadow-[inset_0px_-1px_0px_0px_rgba(0,0,0,0.06)]"
           >
             <div className="px-4">
-              <p className="p-3 font-misans-semibold text-[14px] text-black/30">{group.title}</p>
+              <p className="p-3 font-misans text-[14px] text-black/30">{group.title}</p>
             </div>
             {group.items.map((item) => (
               <button

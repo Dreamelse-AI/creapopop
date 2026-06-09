@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react'
 import { useDraftStore } from '@/store/draftStore'
-import { INTRO_CONTENT_FIELDS, INTRO_TEMPLATES, DETAIL_FIELDS } from '@/data/constants'
+import { INTRO_CONTENT_FIELDS, INTRO_TEMPLATES, DETAIL_FIELDS, MAX_IMAGES } from '@/data/constants'
 import { generateIntroPageHtml } from '@/services/aiIntroPage'
-import type { Character, IntroTemplate } from '@/types/character'
+import { uploadImage } from '@/services/upload'
+import type { Character, CharacterImage, IntroTemplate } from '@/types/character'
 
 // 介绍页美化：三栏布局 — 模版缩略图(左) + Agent 生成卡片(中) + 选择展示内容(右)。
 // 严格对照设计稿 1836:44562。
@@ -42,6 +43,34 @@ export function IntroPageSection() {
     } finally {
       setGenerating(false)
     }
+  }
+
+  // 主图轮换：点击切换到下一张图作为主图
+  const cyclePrimary = () => {
+    if (data.images.length < 2) return
+    const idx = data.images.findIndex((i) => i.id === data.primaryImageId)
+    const next = data.images[(idx + 1) % data.images.length]
+    patch({ primaryImageId: next.id })
+  }
+
+  // 新增图片：上传后加入形象库，无主图时设为主图
+  const fileRef = useRef<HTMLInputElement>(null)
+  const onAddImages = async (files: FileList | null) => {
+    if (!files?.length) return
+    const room = MAX_IMAGES - data.images.length
+    const picked = Array.from(files).slice(0, room)
+    const added: CharacterImage[] = []
+    for (const f of picked) {
+      try {
+        const { url } = await uploadImage(f)
+        added.push({ id: `img_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, url, source: 'upload' })
+      } catch {
+        // 忽略单张失败
+      }
+    }
+    if (!added.length) return
+    const images = [...data.images, ...added]
+    patch({ images, primaryImageId: data.primaryImageId || images[0].id })
   }
 
   return (
@@ -86,22 +115,52 @@ export function IntroPageSection() {
 
       {/* 右：选择展示内容 */}
       <div className="flex w-[284px] shrink-0 flex-col gap-2 overflow-auto pb-[30px]">
-        <p className="font-misans-semibold text-[14px] text-black/30">选择展示内容</p>
+        <p className="font-misans text-[14px] text-black/30">选择展示内容</p>
 
-        {/* 主图（固定） + 占位 */}
+        {/* 主图（可替换） + 新增图片位 */}
         <div className="flex gap-2">
           <div className="relative size-[138px] shrink-0 overflow-hidden rounded-[20px] border border-black/[0.06] bg-white">
             {primaryUrl(data) ? (
               <img src={primaryUrl(data)} alt="" className="size-full object-cover" />
             ) : (
               <div className="flex size-full items-center justify-center text-black/20">
-                <span className="text-3xl font-light">+</span>
+                <img src="/assets/icon-plus.svg" alt="" className="size-8" />
               </div>
             )}
             <span className="pointer-events-none absolute left-1 top-1 rounded-[100px] bg-[rgba(48,48,48,0.9)] px-2 py-1 font-misans-bold text-[12px] text-white">
               主图
             </span>
+            {data.images.length > 1 && (
+              <button
+                onClick={cyclePrimary}
+                title="替换主图"
+                className="absolute bottom-1 right-1 flex size-7 items-center justify-center"
+              >
+                <img src="/assets/intro-change.svg" alt="替换" className="size-7" />
+              </button>
+            )}
           </div>
+
+          {data.images.length < MAX_IMAGES && (
+            <button
+              onClick={() => fileRef.current?.click()}
+              title="新增图片"
+              className="flex size-[138px] shrink-0 items-center justify-center rounded-[20px] border border-black/[0.06] bg-black/[0.03] transition hover:bg-black/[0.06]"
+            >
+              <img src="/assets/icon-plus.svg" alt="新增" className="size-8" />
+            </button>
+          )}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            multiple
+            hidden
+            onChange={(e) => {
+              onAddImages(e.target.files)
+              e.target.value = ''
+            }}
+          />
         </div>
 
         {/* 可勾选字段：基础字段(7项默认选中锁定 + 开场白可取消) + 更多细节(填了才可选) */}
@@ -160,7 +219,7 @@ function CheckRow({
       <span className="flex items-center justify-center p-1.5">
         <span
           className={`flex size-5 items-center justify-center rounded-full ${
-            checked ? 'bg-black' : 'bg-black/10'
+            checked ? 'bg-black' : 'border border-black/15 bg-transparent'
           }`}
         >
           {checked && (

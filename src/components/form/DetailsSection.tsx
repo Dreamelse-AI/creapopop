@@ -31,7 +31,7 @@ export function DetailsSection() {
   return (
     <div className="flex w-[600px] flex-col gap-2">
       <div className="px-3 py-1.5">
-        <h2 className="font-misans-semibold text-[16px] text-black/30">角色更多细节</h2>
+        <h2 className="font-misans text-[16px] text-black/30">角色更多细节</h2>
       </div>
 
       {DETAIL_FIELDS.map((f) => {
@@ -43,7 +43,7 @@ export function DetailsSection() {
             className="flex w-full items-center gap-3 rounded-[16px] bg-white p-3 text-left"
           >
             <div className="flex flex-1 flex-col gap-1 overflow-hidden">
-              <span className="font-misans-medium truncate text-[16px] text-black">
+              <span className="font-misans-medium truncate text-[16px] text-black/50">
                 {f.emoji} {f.label}
               </span>
               {value && (

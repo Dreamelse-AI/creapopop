@@ -96,7 +96,7 @@ export function ImageSection() {
       <div className="flex items-center gap-2">
         <div className="flex flex-1 flex-col gap-0.5 px-3 py-1.5">
           <div className="flex items-center gap-1">
-            <h2 className="font-misans-semibold text-[16px] text-black/30">角色形象</h2>
+            <h2 className="font-misans text-[16px] text-black/30">角色形象</h2>
             <span className="rounded-[100px] bg-black/20 px-1.5 py-0.5 font-misans-semibold text-[12px] text-white">
               {count}/{MAX_IMAGES}
             </span>
@@ -142,10 +142,10 @@ export function ImageSection() {
           <div className="relative size-[138px] shrink-0">
             <button
               onClick={() => setMethodOpen((v) => !v)}
-              className="flex size-full items-center justify-center rounded-[20px] border border-black/[0.06] bg-black/[0.03] text-black/30 transition hover:bg-black/[0.06]"
+              className="flex size-full items-center justify-center rounded-[20px] border border-black/[0.06] bg-black/[0.03] transition hover:bg-black/[0.06]"
               title="添加形象"
             >
-              <span className="text-3xl font-light">+</span>
+              <img src="/assets/icon-plus.svg" alt="添加" className="size-8" />
             </button>
             {methodOpen && (
               <UploadMethodMenu

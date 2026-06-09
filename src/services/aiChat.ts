@@ -1,10 +1,12 @@
 import { apiUrl, getToken } from './apiClient'
-import { DETAIL_FIELDS } from '@/data/constants'
 import type { Character } from '@/types/character'
+import { buildChatPrompt } from '@/prompts'
+import type { PromptLocale, MessageItem } from '@/prompts/types'
 
 export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
+  items?: MessageItem[]
 }
 
 function headers() {
@@ -14,19 +16,26 @@ function headers() {
   return h
 }
 
-// 用角色设定拼装 system prompt（试聊用）
-export function buildSystemPrompt(c: Character): string {
-  const lines = [
-    `你现在扮演一个名为「${c.name || '未命名角色'}」的 AI 陪伴角色。`,
-    '严格以角色的口吻、语气、习惯进行回应，不要暴露"AI / 大模型"等元信息。',
-  ]
-  if (c.personality) lines.push(`性格：${c.personality}`)
-  if (c.intro) lines.push(`简介：${c.intro}`)
-  if (c.tags.length) lines.push(`标签：${c.tags.join('、')}`)
-  for (const f of DETAIL_FIELDS) {
-    if (c.details[f.key]) lines.push(`${f.label}：${c.details[f.key]}`)
-  }
-  return lines.join('\n')
+/**
+ * 兼容旧调用：用新模板系统构建 system prompt
+ */
+export function buildSystemPrompt(c: Character, locale: PromptLocale = 'ko'): string {
+  return buildChatPrompt(c, locale)
+}
+
+/**
+ * 解析模型返回的 JSON 数组为 MessageItem[]
+ * 如果解析失败则回退为单条 text
+ */
+export function parseAIResponse(raw: string): MessageItem[] {
+  try {
+    const trimmed = raw.trim()
+    if (trimmed.startsWith('[')) {
+      const items = JSON.parse(trimmed) as MessageItem[]
+      if (Array.isArray(items) && items.length > 0) return items
+    }
+  } catch { /* fall through */ }
+  return [{ type: 'text', data: { content: raw } }]
 }
 
 export async function sendChatMessage(

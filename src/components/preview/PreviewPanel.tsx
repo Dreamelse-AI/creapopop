@@ -60,10 +60,10 @@ export function PreviewPanel() {
         </div>
       </div>
 
-      {/* 预览区：贴右侧边，移动端比例(390:844)自适应，无手机外壳 */}
+      {/* 预览区：贴右侧边，移动端比例(390:844)自适应，无手机外壳，纯白底 */}
       {!collapsed && (
         <div className="flex h-full items-stretch overflow-hidden">
-          <div className="aspect-[390/844] h-full overflow-hidden">
+          <div className="aspect-[390/844] h-full overflow-hidden bg-white">
             {tab === 'intro' && <IntroPreview />}
             {tab === 'chat' && <ChatPreview />}
             {tab === 'dynamics' && <PlaceholderTab text="动态页将在 P2 接入" />}
@@ -216,19 +216,13 @@ function ChatPreview() {
           ),
         )}
 
-        {display.length === 0 && (
-          <p className="px-6 text-center font-misans text-[14px] text-black/30">
-            和「{data.name || '未命名角色'}」试聊一下，验证人设效果。
-          </p>
-        )}
         {loading && <p className="px-4 font-misans text-[14px] text-black/40">对方正在输入…</p>}
         {error && <p className="px-4 font-misans text-[14px] text-red-500">{error}</p>}
       </div>
 
-      {/* 底部输入栏：mic + 输入 + 发送 */}
-      <div className="px-4 py-2">
+      {/* 底部输入栏：输入 + 发送（无语音输入） */}
+      <div className="px-4 pb-4">
         <div className="flex h-[60px] items-center gap-2 rounded-[24px] bg-white px-[18px]">
-          <img src="/assets/chat-mic.svg" alt="语音" className="size-6 shrink-0 opacity-20" />
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}

@@ -54,7 +54,7 @@ export function BasicInfoSection() {
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center px-3 py-1.5">
-      <h2 className="font-misans-semibold text-[16px] text-black/30">{children}</h2>
+      <h2 className="font-misans text-[16px] text-black/30">{children}</h2>
     </div>
   )
 }
@@ -85,7 +85,7 @@ function NameCard({ value, onChange }: { value: string; onChange: (v: string) =>
           maxLength={MAX_NAME_LEN}
           onChange={(e) => onChange(e.target.value)}
           placeholder="请输入角色名称..."
-          className="font-misans-semibold w-full bg-transparent text-[24px] text-black outline-none placeholder:text-black/20"
+          className="font-misans-medium w-full bg-transparent text-[24px] text-black outline-none placeholder:text-black/20"
         />
       </div>
     </Card>
