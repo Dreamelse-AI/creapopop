@@ -14,12 +14,10 @@ const _base = detectBasePath()
 
 /**
  * Arca 正式后端 baseURL。
- * 开发期 /api（vite proxy → i18n-api.imaginewithu.com），生产构建直接用域名。
- * 对齐 popop-fe 的 api-client 方案。
+ * 开发期：/api（vite proxy → i18n-api.imaginewithu.com）
+ * 生产期：/arca（同源，由 Node server 反代到 Arca，规避浏览器 CORS）
  */
-const ARCA_BASE = import.meta.env.DEV
-  ? '/api'
-  : (import.meta.env.VITE_API_BASE_URL || 'https://i18n-api.imaginewithu.com')
+const ARCA_BASE = import.meta.env.DEV ? '/api' : '/arca'
 
 const TOKEN_KEY = 'creapopop_token'
 
@@ -36,8 +34,11 @@ export function clearToken(): void {
 }
 
 export function apiUrl(path: string): string {
-  // 临时后端接口走 /local-api（vite proxy → localhost:9527）
-  const localPath = path.replace(/^\/api\//, '/local-api/')
+  // 临时后端接口：开发期走 /local-api（vite proxy → localhost:9527）；
+  // 生产期保持 /api（同源，直达 Node server 自身路由）。
+  const localPath = import.meta.env.DEV
+    ? path.replace(/^\/api\//, '/local-api/')
+    : path
   return _base ? _base + localPath : localPath
 }
 
@@ -46,7 +47,7 @@ export function apiUrl(path: string): string {
  * 开发期 /api（vite proxy → i18n-api.imaginewithu.com），生产构建用 VITE_API_BASE_URL。
  */
 export function arcaUrl(path: string): string {
-  return ARCA_BASE + path
+  return _base ? _base + ARCA_BASE + path : ARCA_BASE + path
 }
 
 function authHeaders(): Record<string, string> {

@@ -6,6 +6,7 @@ const character = require('./routes/character.cjs');
 const mock = require('./routes/mock.cjs');
 const ai = require('./routes/ai.cjs');
 const file = require('./routes/file.cjs');
+const { handleArcaProxy } = require('./routes/arcaProxy.cjs');
 const { serveStatic, serveUpload } = require('./static.cjs');
 
 const AI_IMAGE_TASK_RE = /^\/api\/ai\/image\/task\/([^/]+)$/;
@@ -23,6 +24,9 @@ function dispatch(req, res) {
 
     // 健康检查
     if (reqPath === '/health') return sendJson(res, 200, { status: 'ok' });
+
+    // Arca 反向代理（解决生产跨域）：/arca/* → i18n-api.imaginewithu.com/*
+    if (reqPath.startsWith('/arca/')) return handleArcaProxy(req, res, reqPath);
 
     // 账号
     if (reqPath === '/api/auth/send-code' && m === 'POST') return auth.handleSendCode(req, res);

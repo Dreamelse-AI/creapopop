@@ -51,7 +51,9 @@ function generateObjectKey(file: File): string {
  * TOS S3 兼容接口：PUT https://{bucket}.{endpoint}/{objectKey}
  */
 async function putToTos(cred: TosCredential, objectKey: string, file: File): Promise<string> {
-  const url = `https://${cred.bucket}.${cred.endpoint}/${objectKey}`
+  // endpoint 可能带 https:// 前缀，也可能不带，统一规整为纯 host
+  const host = cred.endpoint.replace(/^https?:\/\//, '')
+  const url = `https://${cred.bucket}.${host}/${objectKey}`
   const res = await fetch(url, {
     method: 'PUT',
     headers: {
