@@ -473,8 +473,8 @@ function AgentCard({
                   onClick={() => pickType('image/*')}
                   className="flex h-10 items-center gap-2 rounded-[12px]"
                 >
-                  <img src="/assets/icon-gallery.svg" alt="" className="size-6" />
-                  <span className="font-misans-medium text-[16px] text-black">添加图片</span>
+                  <img src="/assets/menu-gallery.svg" alt="" className="size-6" />
+                  <span className="font-misans-heavy text-[16px] text-black">添加图片</span>
                 </button>
                 <div className="my-1 h-px w-full bg-black/10" />
                 <button
@@ -482,7 +482,7 @@ function AgentCard({
                   className="flex h-10 items-center gap-2 rounded-[12px]"
                 >
                   <img src="/assets/menu-music.svg" alt="" className="size-6" />
-                  <span className="font-misans-medium text-[16px] text-black">添加音乐</span>
+                  <span className="font-misans-heavy text-[16px] text-black">添加音乐</span>
                 </button>
                 <div className="my-1 h-px w-full bg-black/10" />
                 <button
@@ -490,7 +490,7 @@ function AgentCard({
                   className="flex h-10 items-center gap-2 rounded-[12px]"
                 >
                   <img src="/assets/menu-doc.svg" alt="" className="size-6" />
-                  <span className="font-misans-medium text-[16px] text-black">上传文档</span>
+                  <span className="font-misans-heavy text-[16px] text-black">上传文档</span>
                 </button>
               </div>
             )}
