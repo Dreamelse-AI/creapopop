@@ -96,8 +96,8 @@ export function CharacterCard({
           onClick={stop(onPublish)}
           disabled={!canPublish || publishing}
           className={`absolute bottom-3 right-3 flex h-9 items-center gap-1 rounded-[30px] py-2 pl-3 pr-4 ${
-            canPublish ? 'bg-[#fdeab3]' : 'bg-[#ebebeb]'
-          } disabled:opacity-60`}
+            canPublish ? 'bg-[#fdeab3]' : 'bg-[#ebebeb] opacity-60'
+          }`}
           title={canPublish ? '发布' : '请先填写基本信息并上传至少一张形象'}
         >
           {publishing ? (

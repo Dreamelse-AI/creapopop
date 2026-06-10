@@ -14,7 +14,15 @@ interface ArcaUserUploadImage {
   name?: string
   image_type: 'aigc' | 'upload'
   url: string
-  is_main_pic: boolean
+  // 注：arca.api 中该字段 json tag 为 `jons:"is_main_pic"`（后端 typo），
+  // 实际序列化可能回退为 Go 字段名 `IsMainPic`，两者都兼容读取。
+  is_main_pic?: boolean
+  IsMainPic?: boolean
+}
+
+// 兼容后端 is_main_pic typo：优先 is_main_pic，回退 IsMainPic
+function isMainPic(img: ArcaUserUploadImage): boolean {
+  return img.is_main_pic === true || img.IsMainPic === true
 }
 
 interface ArcaCustomizedSetting {
@@ -81,7 +89,9 @@ function toArcaForm(c: Partial<Character>): ArcaCharacterCreateForm {
           name: '',
           image_type: img.source === 'ai' ? 'aigc' as const : 'upload' as const,
           url: img.url,
+          // 双写：后端 json tag 为 typo `jons:"is_main_pic"`，两个字段都带上以确保命中
           is_main_pic: img.id === c.primaryImageId,
+          IsMainPic: img.id === c.primaryImageId,
         }))
       : undefined,
   }
@@ -107,9 +117,11 @@ function fromArcaDraft(d: ArcaDraftItem): Character {
       url: img.url,
       source: img.image_type === 'aigc' ? 'ai' as const : 'upload' as const,
     })),
-    primaryImageId: (f.images || []).find((img) => img.is_main_pic)
-      ? `img_${(f.images || []).findIndex((img) => img.is_main_pic)}`
-      : null,
+    primaryImageId: (f.images || []).find((img) => isMainPic(img))
+      ? `img_${(f.images || []).findIndex((img) => isMainPic(img))}`
+      : (f.images || []).length > 0
+        ? 'img_0'
+        : null,
     details: f.customized_settings
       ? Object.fromEntries(
           Object.entries(f.customized_settings).map(([k, v]) => [k, v.content]),
