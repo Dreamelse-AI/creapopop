@@ -182,11 +182,21 @@ function fromPublishedChar(info: ArcaCharacterPageBasicInfo): Character {
 
 export async function listCharacters(status?: 'draft' | 'published'): Promise<ListResp> {
   if (status === 'draft') {
-    const resp = await arcaPost<ListDraftsResp>('/character/list_drafts', {})
-    return { success: true, characters: (resp.drafts || []).map(fromArcaDraft) }
+    try {
+      const resp = await arcaPost<ListDraftsResp>('/character/list_drafts', {})
+      return { success: true, characters: (resp.drafts || []).map(fromArcaDraft) }
+    } catch (e) {
+      console.error('[characterApi] list_drafts failed:', e)
+      throw e
+    }
   }
-  const resp = await arcaPost<ListMyCharsResp>('/character/list_my_characters', { limit: 50 })
-  return { success: true, characters: (resp.characters || []).map(fromPublishedChar) }
+  try {
+    const resp = await arcaPost<ListMyCharsResp>('/character/list_my_characters', { limit: 50 })
+    return { success: true, characters: (resp.characters || []).map(fromPublishedChar) }
+  } catch (e) {
+    console.error('[characterApi] list_my_characters failed:', e)
+    return { success: true, characters: [] }
+  }
 }
 
 export async function getCharacter(id: string): Promise<GetResp> {

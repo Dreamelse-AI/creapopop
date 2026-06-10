@@ -43,8 +43,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       await arcaPost<ArcaEmailCodeResp>('/auth/email/verification-codes', { email })
       set({ sending: false })
       return true
-    } catch {
-      set({ sending: false, error: '验证码发送失败，请检查邮箱' })
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '验证码发送失败'
+      set({ sending: false, error: msg })
       return false
     }
   },
@@ -57,8 +58,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.setItem(EMAIL_KEY, email)
       set({ email, isAuthed: true, loading: false })
       return true
-    } catch {
-      set({ loading: false, error: '验证码错误或已过期', isAuthed: false })
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '登录失败'
+      set({ loading: false, error: msg, isAuthed: false })
       return false
     }
   },

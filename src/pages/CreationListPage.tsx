@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { TopNav } from '@/components/layout/TopNav'
 import { CharacterCard } from '@/components/character/CharacterCard'
-import { PillButton, SectionTitle } from '@/components/ui/primitives'
+import { PillButton } from '@/components/ui/primitives'
 import {
   deleteCharacter,
   listCharacters,
@@ -60,7 +60,7 @@ export function CreationListPage() {
         {isError && (
           <CenterState
             title="加载失败"
-            desc="网络异常，请重试"
+            desc={drafts.error?.message || published.error?.message || '网络异常，请重试'}
             action={
               <PillButton
                 onClick={() => {
@@ -92,10 +92,21 @@ export function CreationListPage() {
         )}
 
         {!isLoading && !isError && !isEmpty && (
-          <div className="flex w-full max-w-[1512px] flex-col gap-12">
+          <div className="flex w-full flex-col gap-10">
+            {/* 草稿箱 */}
             <section className="flex flex-col gap-2">
-              <SectionTitle>草稿箱 {draftList.length}</SectionTitle>
-              <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center justify-between px-3 py-1.5">
+                <h2 className="font-misans text-[16px] text-black/30">草稿箱 {draftList.length}</h2>
+                {draftList.length > 3 && (
+                  <button
+                    onClick={() => navigate('/all?tab=draft')}
+                    className="font-misans text-[14px] text-black/40 transition hover:text-black/60"
+                  >
+                    查看全部 &gt;
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-4 overflow-x-auto pb-2">
                 <button
                   onClick={() => createMut.mutate()}
                   disabled={createMut.isPending}
@@ -117,12 +128,23 @@ export function CreationListPage() {
               </div>
             </section>
 
+            {/* 已发布 */}
             <section className="flex flex-col gap-2">
-              <SectionTitle>已发布 {publishedList.length}</SectionTitle>
+              <div className="flex items-center justify-between px-3 py-1.5">
+                <h2 className="font-misans text-[16px] text-black/30">已发布 {publishedList.length}</h2>
+                {publishedList.length > 3 && (
+                  <button
+                    onClick={() => navigate('/all?tab=published')}
+                    className="font-misans text-[14px] text-black/40 transition hover:text-black/60"
+                  >
+                    查看全部 &gt;
+                  </button>
+                )}
+              </div>
               {publishedList.length === 0 ? (
                 <p className="font-misans px-3 text-[14px] text-black/30">还没有发布的角色</p>
               ) : (
-                <div className="flex flex-wrap items-center gap-4">
+                <div className="flex gap-4 overflow-x-auto pb-2">
                   {publishedList.map((c) => (
                     <CharacterCard
                       key={c.id}
