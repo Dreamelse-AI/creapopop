@@ -9,9 +9,11 @@ import { ImageSection } from '@/components/form/ImageSection'
 import { DetailsSection } from '@/components/form/DetailsSection'
 import { GreetingsSection } from '@/components/form/GreetingsSection'
 import { IntroPageSection } from '@/components/form/IntroPageSection'
+import { DynamicSection } from '@/components/form/DynamicSection'
+import { DynamicHistorySection } from '@/components/form/DynamicHistorySection'
 import { PreviewPanel } from '@/components/preview/PreviewPanel'
 
-type SectionKey = 'basic' | 'image' | 'details' | 'greetings' | 'introPage' | 'dynamic'
+type SectionKey = 'basic' | 'image' | 'details' | 'greetings' | 'introPage' | 'dynamicNew' | 'dynamicHistory'
 
 const NAV_GROUPS: { title: string; items: { key: SectionKey; label: string; enabled: boolean }[] }[] = [
   {
@@ -30,8 +32,8 @@ const NAV_GROUPS: { title: string; items: { key: SectionKey; label: string; enab
   {
     title: '角色发帖',
     items: [
-      { key: 'dynamic', label: '💭 新建动态', enabled: true },
-      { key: 'dynamic', label: '💬 历史动态', enabled: false },
+      { key: 'dynamicNew', label: '💭 新建动态', enabled: true },
+      { key: 'dynamicHistory', label: '💬 历史动态', enabled: true },
     ],
   },
 ]
@@ -132,11 +134,8 @@ export function CharacterFormPage() {
             {active === 'image' && <ImageSection />}
             {active === 'details' && <DetailsSection />}
             {active === 'greetings' && <GreetingsSection />}
-            {active === 'dynamic' && (
-              <div className="flex w-[600px] items-center justify-center pt-20 text-black/30">
-                角色动态功能即将上线
-              </div>
-            )}
+            {active === 'dynamicNew' && <DynamicSection />}
+            {active === 'dynamicHistory' && <DynamicHistorySection />}
           </div>
         </main>
       )}
