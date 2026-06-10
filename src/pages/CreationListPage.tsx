@@ -41,6 +41,11 @@ export function CreationListPage() {
       qc.invalidateQueries({ queryKey: ['characters', 'draft'] })
       navigate(`/character/${res.character.id}`)
     },
+    onError: (e) => {
+      const msg = e instanceof Error ? e.message : ''
+      // 后端对草稿数量有上限（如最多 5 个），超限时新建会失败
+      alert(`新建失败：${msg || '草稿数量可能已达上限，请先删除部分草稿后再试'}`)
+    },
   })
 
   const deleteMut = useMutation({
