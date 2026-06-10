@@ -122,6 +122,11 @@ export async function arcaPost<T>(path: string, body?: unknown): Promise<T> {
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
   const text = await res.text()
+  if (res.status === 401) {
+    clearToken()
+    window.location.href = '/login'
+    throw new ApiError(401, 'token 过期，请重新登录')
+  }
   if (!res.ok) throw new ApiError(res.status, text)
   return parseArcaResp<T>(text, path)
 }
@@ -132,6 +137,11 @@ export async function arcaPost<T>(path: string, body?: unknown): Promise<T> {
 export async function arcaGet<T>(path: string): Promise<T> {
   const res = await fetch(arcaUrl(path), { headers: authHeaders() })
   const text = await res.text()
+  if (res.status === 401) {
+    clearToken()
+    window.location.href = '/login'
+    throw new ApiError(401, 'token 过期，请重新登录')
+  }
   if (!res.ok) throw new ApiError(res.status, text)
   return parseArcaResp<T>(text, path)
 }
