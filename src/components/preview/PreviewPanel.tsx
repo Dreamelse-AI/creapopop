@@ -67,7 +67,7 @@ export function PreviewPanel() {
           <div className="aspect-[390/844] h-full overflow-hidden bg-white">
             {tab === 'intro' && <IntroPreview />}
             {tab === 'chat' && <ChatPreview />}
-            {tab === 'dynamics' && <PlaceholderTab text="动态页将在 P2 接入" />}
+            {tab === 'dynamics' && <DynamicsPreview />}
           </div>
         </div>
       )}
@@ -138,6 +138,85 @@ function IntroPreview() {
 
 function PlaceholderTab({ text }: { text: string }) {
   return <div className="flex h-full items-center justify-center text-sm text-black/40">{text}</div>
+}
+
+function DynamicsPreview() {
+  const data = useDraftStore((s) => s.data)!
+  const dynamics = [...data.dynamics].sort((a, b) => b.createdAt - a.createdAt)
+  const cover =
+    data.images.find((i) => i.id === data.primaryImageId)?.url || data.images[0]?.url || ''
+
+  if (dynamics.length === 0) {
+    return (
+      <div className="flex size-full flex-col items-center justify-center gap-2 bg-black">
+        <p className="font-misans text-[14px] text-white/40">暂无动态</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex size-full flex-col overflow-auto bg-black">
+      {/* 顶部角色头像区 */}
+      <div className="flex items-center gap-2 px-4 pt-4 pb-3">
+        <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10">
+          {cover ? (
+            <img src={cover} alt="" className="size-full object-cover" />
+          ) : (
+            <span className="text-[12px] text-white/40">角色</span>
+          )}
+        </div>
+        <span className="font-misans-semibold text-[14px] text-white">
+          {data.name || '未命名角色'}
+        </span>
+      </div>
+
+      {/* 动态列表 */}
+      <div className="flex flex-col gap-4 px-4 pb-4">
+        {dynamics.map((dyn) => (
+          <DynamicFeedItem key={dyn.id} dynamic={dyn} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function DynamicFeedItem({ dynamic }: { dynamic: import('@/types/character').CharacterDynamic }) {
+  const dateStr = (() => {
+    const d = new Date(dynamic.createdAt)
+    const h = d.getHours().toString().padStart(2, '0')
+    const m = d.getMinutes().toString().padStart(2, '0')
+    return `${d.getMonth() + 1}月${d.getDate()}日 ${h}:${m}`
+  })()
+
+  return (
+    <div className="flex flex-col gap-2">
+      {/* 图片网格 */}
+      {dynamic.images.length > 0 && (
+        <div className="flex flex-wrap gap-1 overflow-hidden rounded-[12px]">
+          {dynamic.images.slice(0, 4).map((url, i) => (
+            <div
+              key={i}
+              className="overflow-hidden"
+              style={{
+                width: dynamic.images.length === 1 ? '100%' : 'calc(50% - 2px)',
+                aspectRatio: dynamic.images.length === 1 ? '3/4' : '1',
+              }}
+            >
+              <img src={url} alt="" className="size-full object-cover" />
+            </div>
+          ))}
+        </div>
+      )}
+      {/* 文案 */}
+      {dynamic.text && (
+        <p className="font-misans-medium text-[13px] leading-[18px] text-white/80">
+          {dynamic.text}
+        </p>
+      )}
+      {/* 时间 */}
+      <span className="font-misans text-[11px] text-white/30">{dateStr}</span>
+    </div>
+  )
 }
 
 // 聊天试聊：用角色设定做 system prompt，与角色多轮对话（Gemini）。
