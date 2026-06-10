@@ -88,6 +88,24 @@ export class ApiError extends Error {
 }
 
 /**
+ * Arca 统一响应封装：{ code: number, msg: string, data: T }
+ * code=0 为成功，非 0 为业务错误。
+ */
+interface ArcaResp<T> {
+  code: number
+  msg: string
+  data: T
+}
+
+function parseArcaResp<T>(text: string, path: string): T {
+  const resp = parseJson<ArcaResp<T>>(text, path)
+  if (resp.code !== 0) {
+    throw new ApiError(resp.code, resp.msg || 'Arca 业务错误')
+  }
+  return resp.data
+}
+
+/**
  * Arca 后端 POST 封装（大部分 Arca 接口是 POST）。
  * 对应 arca.api 的鉴权 @server(jwt: Auth, authType: apiKey)。
  * Authorization: Bearer <jwt_token>
@@ -100,7 +118,7 @@ export async function arcaPost<T>(path: string, body?: unknown): Promise<T> {
   })
   const text = await res.text()
   if (!res.ok) throw new ApiError(res.status, text)
-  return parseJson<T>(text, path)
+  return parseArcaResp<T>(text, path)
 }
 
 /**
@@ -110,5 +128,5 @@ export async function arcaGet<T>(path: string): Promise<T> {
   const res = await fetch(arcaUrl(path), { headers: authHeaders() })
   const text = await res.text()
   if (!res.ok) throw new ApiError(res.status, text)
-  return parseJson<T>(text, path)
+  return parseArcaResp<T>(text, path)
 }

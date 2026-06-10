@@ -20,7 +20,7 @@ export default defineConfig({
         changeOrigin: true,
       },
       '/arca': {
-        target: 'https://api-preview-2603.imaginewithu.com',
+        target: 'https://i18n-api.imaginewithu.com',
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/arca/, ''),
         secure: true,
