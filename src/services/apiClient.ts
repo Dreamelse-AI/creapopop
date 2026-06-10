@@ -42,8 +42,8 @@ export function apiUrl(path: string): string {
 }
 
 /**
- * 对应 arca.api 的请求 — 拼接 Arca baseURL。
- * 开发期走 vite proxy（/arca → preview），生产构建时 VITE_API_BASE_URL 为完整域名。
+ * 拼接 Arca baseURL，所有 Arca 接口共用。
+ * 开发期 /api（vite proxy → i18n-api.imaginewithu.com），生产构建用 VITE_API_BASE_URL。
  */
 export function arcaUrl(path: string): string {
   return ARCA_BASE + path
