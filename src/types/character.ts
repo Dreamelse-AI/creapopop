@@ -1,7 +1,8 @@
 export type CharacterStatus = 'draft' | 'reviewing' | 'published'
-export type Species = 'human' | 'elf' | 'beast' | 'animal' | 'other'
-export type Gender = 'male' | 'female' | 'unknown'
-export type Visibility = 'private' | 'public'
+// 空串 '' = 未选择（默认态，展示"请选择"）
+export type Species = '' | 'human' | 'elf' | 'beast' | 'animal' | 'other'
+export type Gender = '' | 'male' | 'female' | 'unknown'
+export type Visibility = '' | 'private' | 'public'
 export type IntroTemplate = 'none' | 'tpl1' | 'tpl2'
 export type ImageSource = 'upload' | 'ai'
 
@@ -63,12 +64,12 @@ export function createEmptyCharacter(id: string, ownerEmail: string): Character 
     status: 'draft',
     name: '',
     tags: [],
-    species: 'human',
-    gender: 'unknown',
+    species: '',
+    gender: '',
     voiceId: null,
     intro: '',
     personality: '',
-    visibility: 'private',
+    visibility: '',
     anonymousTags: [],
     images: [],
     primaryImageId: null,

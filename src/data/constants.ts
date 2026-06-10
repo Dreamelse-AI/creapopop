@@ -29,6 +29,11 @@ export const GENDER_OPTIONS = [
   { value: 'unknown', label: '未知', emoji: '❓' },
 ] as const
 
+export const VISIBILITY_OPTIONS = [
+  { value: 'public', label: '公开', emoji: '🌍' },
+  { value: 'private', label: '私密', emoji: '🔒' },
+] as const
+
 // 更多细节字段（来自设计稿，含 emoji 前缀）
 export const DETAIL_FIELDS = [
   { key: 'age', label: '年龄', emoji: '🎂' },

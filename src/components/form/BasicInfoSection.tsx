@@ -5,6 +5,7 @@ import { listVoices } from '@/services/mockData'
 import {
   SPECIES_OPTIONS,
   GENDER_OPTIONS,
+  VISIBILITY_OPTIONS,
   PRESET_TAGS,
   MAX_TAGS,
   MAX_NAME_LEN,
@@ -111,7 +112,7 @@ function TagsCard({ tags, onChange }: { tags: string[]; onChange: (t: string[]) 
           {tags.map((t) => (
             <span
               key={t}
-              className="font-misans-semibold rounded-[100px] bg-black/[0.04] px-2 py-1.5 text-[14px] text-black/50"
+              className="font-misans-medium rounded-[100px] bg-black/[0.04] px-2 py-1.5 text-[14px] text-black/50"
             >
               {t}
             </span>
@@ -183,21 +184,27 @@ function SelectCard<T extends string>({
       </button>
       {open && (
         <div className="absolute z-20 mt-1 flex min-w-[175px] flex-col rounded-[20px] bg-white px-4 py-3 shadow-[0px_10px_30px_rgba(0,0,0,0.1)]">
-          {options.map((o, i) => (
-            <div key={o.value} className="flex flex-col">
-              {i > 0 && <div className="h-px w-full bg-black/10" />}
-              <button
-                onClick={() => {
-                  onChange(o.value)
-                  setOpen(false)
-                }}
-                className="font-misans-heavy flex h-[52px] w-full items-center gap-3 text-black"
-              >
-                <span className="text-[24px] leading-none">{o.emoji}</span>
-                <span className="whitespace-nowrap text-[16px]">{o.label}</span>
-              </button>
-            </div>
-          ))}
+          {options.map((o, i) => {
+            const active = o.value === value
+            return (
+              <div key={o.value} className="flex flex-col">
+                {i > 0 && <div className="h-px w-full bg-black/10" />}
+                <button
+                  onClick={() => {
+                    onChange(o.value)
+                    setOpen(false)
+                  }}
+                  className="font-misans-medium flex h-[52px] w-full items-center gap-3 text-black"
+                >
+                  <span className="text-[24px] leading-none">{o.emoji}</span>
+                  <span className="flex-1 whitespace-nowrap text-left text-[16px]">{o.label}</span>
+                  {active && (
+                    <img src="/assets/intro-check.svg" alt="" className="h-[9px] w-[12px] [filter:brightness(0)]" />
+                  )}
+                </button>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
@@ -318,8 +325,12 @@ function AnonymousCard({ tags, onChange }: { tags: string[]; onChange: (t: strin
         {tags.map((t, i) => (
           <div key={i} className="flex items-center gap-3 rounded-[16px] bg-[#f7f7f7] p-3">
             <span className="font-misans-medium flex-1 text-[16px] text-black">{t}</span>
-            <button onClick={() => onChange(tags.filter((x) => x !== t))} className="size-6 text-black/40">
-              ×
+            <button
+              onClick={() => onChange(tags.filter((x) => x !== t))}
+              className="size-6 shrink-0"
+              title="删除"
+            >
+              <img src="/assets/icon-field-clear.svg" alt="删除" className="size-full" />
             </button>
           </div>
         ))}
@@ -342,7 +353,7 @@ function AnonymousCard({ tags, onChange }: { tags: string[]; onChange: (t: strin
   )
 }
 
-// 可见性：label + 值 + 箭头，点击切换 私密/公开
+// 可见性：与物种/性别一致的卡片+浮层面板（选中态勾选）
 function VisibilityCard({
   value,
   onChange,
@@ -350,18 +361,5 @@ function VisibilityCard({
   value: Visibility
   onChange: (v: Visibility) => void
 }) {
-  return (
-    <button
-      onClick={() => onChange(value === 'private' ? 'public' : 'private')}
-      className="flex w-full items-center justify-between rounded-[20px] border border-black/[0.06] bg-white p-3"
-    >
-      <span className="flex flex-col items-start gap-2">
-        <span className="font-misans-medium text-[16px] text-black/50">🔒 可见性</span>
-        <span className="font-misans-medium text-[16px] text-black">
-          {value === 'private' ? '私密' : '公开'}
-        </span>
-      </span>
-      <img src="/assets/icon-arrow-right.svg" alt="" className="size-6 shrink-0 opacity-30" />
-    </button>
-  )
+  return <SelectCard label="🔒 可见性" value={value} options={VISIBILITY_OPTIONS} onChange={onChange} />
 }

@@ -19,7 +19,7 @@ export function DynamicHistorySection() {
     return (
       <div className="flex w-[600px] flex-col gap-4">
         <div className="flex flex-col gap-0.5 px-3 py-1.5">
-          <h2 className="font-misans text-[16px] text-black/30">历史动态</h2>
+          <h2 className="font-misans-medium text-[16px] text-black/30">历史动态</h2>
         </div>
         <div className="flex flex-col items-center justify-center gap-2 py-20">
           <p className="font-misans text-[14px] text-black/30">暂无动态</p>
@@ -36,7 +36,7 @@ export function DynamicHistorySection() {
       {/* 左侧：动态列表 */}
       <div className="flex w-[600px] shrink-0 flex-col gap-4">
         <div className="flex flex-col gap-0.5 px-3 py-1.5">
-          <h2 className="font-misans text-[16px] text-black/30">历史动态</h2>
+          <h2 className="font-misans-medium text-[16px] text-black/30">历史动态</h2>
           <p className="font-misans-medium text-[14px] text-black/30">
             共 {dynamics.length} 条动态
           </p>
@@ -158,9 +158,10 @@ function DynamicDetailPanel({
         <span className="font-misans-semibold text-[16px] text-black">动态详情</span>
         <button
           onClick={onClose}
-          className="flex size-8 items-center justify-center rounded-full text-[18px] text-black/40 hover:bg-black/5"
+          className="flex size-8 items-center justify-center rounded-full hover:bg-black/5"
+          aria-label="关闭"
         >
-          ×
+          <img src="/assets/icon-field-clear.svg" alt="关闭" className="size-6" />
         </button>
       </div>
 

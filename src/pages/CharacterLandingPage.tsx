@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getCharacterForPage } from '@/services/characterApi'
 import { DETAIL_FIELDS } from '@/data/constants'
 import { SandboxHtml } from '@/components/preview/SandboxHtml'
-import { Spinner } from '@/components/ui/primitives'
+import { FullscreenLoading } from '@/components/ui/primitives'
 import type { Character } from '@/types/character'
 
 // 角色落地页：中间固定 390px（移动端宽度）展示介绍页，
@@ -43,10 +43,7 @@ export function CharacterLandingPage() {
       {/* 中间 390 区域 */}
       <div className="h-full w-[390px] shrink-0 overflow-y-auto bg-white shadow-[0_0_60px_rgba(0,0,0,0.12)]">
         {query.isLoading ? (
-          <div className="flex h-full flex-col items-center justify-center gap-3 text-black/40">
-            <Spinner size={28} className="text-black/30" />
-            <span className="font-misans text-[14px]">加载中…</span>
-          </div>
+          <FullscreenLoading />
         ) : !character ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-black/40">
             <p className="font-misans text-[16px]">角色不存在或已删除</p>
