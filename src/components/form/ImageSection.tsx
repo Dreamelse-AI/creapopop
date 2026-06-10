@@ -2,11 +2,19 @@ import { useEffect, useRef, useState } from 'react'
 import { useDraftStore } from '@/store/draftStore'
 import { MAX_IMAGES } from '@/data/constants'
 import type { CharacterImage } from '@/types/character'
-import { generateImage, type ImageTaskStatus } from '@/services/aiImage'
+import { generateImage } from '@/services/aiImage'
 import { uploadImage } from '@/services/upload'
 
 // 形象：上传/AI生图构成虚拟形象库，可设为基础形象/删除。
 // 框架对齐 Figma：头部(标题+计数+批量删除) + 138 网格(上传位弹方式菜单 + 图片悬浮操作)。
+
+// 进行中的生图任务：在网格里占一个「生成中」的图块，完成后替换为真实图片。
+interface PendingGen {
+  id: string
+  status: 'queued' | 'running' | 'error'
+  error?: string
+}
+
 export function ImageSection() {
   const data = useDraftStore((s) => s.data)!
   const patch = useDraftStore((s) => s.patch)
@@ -16,10 +24,10 @@ export function ImageSection() {
   const [methodOpen, setMethodOpen] = useState(false)
   const [batchMode, setBatchMode] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [genStatus, setGenStatus] = useState<ImageTaskStatus | null>(null)
+  const [pending, setPending] = useState<PendingGen | null>(null)
   const [genError, setGenError] = useState<string | null>(null)
+  const [viewerOpen, setViewerOpen] = useState(false)
 
-  const generating = genStatus?.status === 'queued' || genStatus?.status === 'running'
   const count = data.images.length
 
   const addImage = (url: string, source: CharacterImage['source']) => {
@@ -32,19 +40,40 @@ export function ImageSection() {
     patch({ images, primaryImageId: data.primaryImageId || img.id })
   }
 
+  // 点「生成」：立刻关闭弹窗 + 在网格插入「生成中」图块，生图在后台跑，完成后替换。
   const runGenerate = async () => {
-    if (!prompt.trim() || generating || count >= MAX_IMAGES) return
+    const p = prompt.trim()
+    if (!p || pending || count >= MAX_IMAGES) return
     setGenError(null)
-    const result = await generateImage({ prompt: prompt.trim(), aspect: '9:16', onUpdate: setGenStatus })
+    const genId = `gen_${Date.now()}`
+    setPending({ id: genId, status: 'queued' })
+    setPrompt('')
+    setAiOpen(false)
+
+    const result = await generateImage({
+      prompt: p,
+      aspect: '9:16',
+      onUpdate: (s) => {
+        if (s.status === 'queued' || s.status === 'running') {
+          const st = s.status
+          setPending((prev) => (prev && prev.id === genId ? { ...prev, status: st } : prev))
+        }
+      },
+    })
+
     if (result.status === 'done' && result.imageUrl) {
       addImage(result.imageUrl, 'ai')
-      setPrompt('')
-      setGenStatus(null)
-      setAiOpen(false)
+      setPending(null)
+      setViewerOpen(false)
     } else {
-      setGenError(result.error || '生成失败')
-      setGenStatus(null)
+      setPending({ id: genId, status: 'error', error: result.error || '生成失败' })
     }
+  }
+
+  const retryGenerate = () => {
+    setPending(null)
+    setViewerOpen(false)
+    setAiOpen(true)
   }
 
   const onFiles = async (files: FileList | null) => {
@@ -175,7 +204,48 @@ export function ImageSection() {
             onDelete={() => remove([img.id])}
           />
         ))}
+
+        {/* 生成中 / 生成失败的占位图块 */}
+        {pending && (
+          <GeneratingTile
+            status={pending.status}
+            onClick={() => setViewerOpen(true)}
+            onRetry={retryGenerate}
+            onDismiss={() => setPending(null)}
+          />
+        )}
       </div>
+
+      {/* 生成中大图蒙层 */}
+      {viewerOpen && pending && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80">
+          <button
+            onClick={() => setViewerOpen(false)}
+            className="absolute left-5 top-5 flex size-10 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+            aria-label="关闭"
+          >
+            <CloseIcon />
+          </button>
+          <div className="flex h-[80vh] max-h-[720px] w-[min(420px,90vw)] flex-col items-center justify-center gap-4 rounded-[24px] bg-white/[0.06]">
+            {pending.status === 'error' ? (
+              <div className="flex flex-col items-center gap-4">
+                <p className="font-misans text-[16px] text-white/70">{pending.error || '生成失败'}</p>
+                <button
+                  onClick={retryGenerate}
+                  className="rounded-[100px] bg-white px-6 py-2.5 font-misans-semibold text-[16px] text-black"
+                >
+                  重试
+                </button>
+              </div>
+            ) : (
+              <>
+                <Spinner size={48} />
+                <p className="font-misans text-[16px] text-white/70">生成中…</p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* AI 生图弹窗 */}
       {aiOpen && (
@@ -193,16 +263,11 @@ export function ImageSection() {
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="输入角色形象描述"
-                  disabled={generating}
-                  className="flex-1 resize-none bg-transparent font-misans text-[16px] text-black outline-none placeholder:text-black/20 disabled:opacity-50"
+                  className="flex-1 resize-none bg-transparent font-misans text-[16px] text-black outline-none placeholder:text-black/20"
                 />
                 <div className="flex items-center justify-between">
                   <span className="font-misans text-[12px] text-black/30">
-                    {generating
-                      ? genStatus?.status === 'queued'
-                        ? '排队中…'
-                        : `生成中…${genStatus?.progress ? Math.round(genStatus.progress * 100) + '%' : ''}`
-                      : `${count}/${MAX_IMAGES}`}
+                    {count}/{MAX_IMAGES}
                   </span>
                 </div>
                 {genError && (
@@ -217,10 +282,10 @@ export function ImageSection() {
               <div className="flex items-end justify-center p-3">
                 <button
                   onClick={runGenerate}
-                  disabled={generating || !prompt.trim() || count >= MAX_IMAGES}
+                  disabled={!prompt.trim() || count >= MAX_IMAGES || !!pending}
                   className="flex h-[60px] flex-1 items-center justify-center rounded-[20px] bg-black font-misans-semibold text-[18px] text-white transition hover:opacity-90 disabled:opacity-40"
                 >
-                  {generating ? '生成中…' : '生成'}
+                  生成
                 </button>
               </div>
             </div>
@@ -233,7 +298,67 @@ export function ImageSection() {
   )
 }
 
-// 上传方式弹出菜单（从本地上传 / AI生图）
+// 旋转 loading 图标（纯 CSS，无外部资源依赖）
+function Spinner({ size = 24 }: { size?: number }) {
+  return (
+    <span
+      className="inline-block animate-spin rounded-full border-2 border-current border-t-transparent text-black/30"
+      style={{ width: size, height: size }}
+    />
+  )
+}
+
+// 关闭图标（内联 SVG）
+function CloseIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  )
+}
+
+// 生成中 / 失败的占位图块
+function GeneratingTile({
+  status,
+  onClick,
+  onRetry,
+  onDismiss,
+}: {
+  status: 'queued' | 'running' | 'error'
+  onClick: () => void
+  onRetry: () => void
+  onDismiss: () => void
+}) {
+  if (status === 'error') {
+    return (
+      <div className="relative flex size-[138px] shrink-0 flex-col items-center justify-center gap-2 rounded-[20px] border border-black/[0.06] bg-black/[0.03]">
+        <span className="font-misans text-[13px] text-black/40">生成失败</span>
+        <div className="flex items-center gap-2">
+          <button onClick={onRetry} className="font-misans-medium text-[13px] text-black underline">
+            重试
+          </button>
+          <button onClick={onDismiss} className="font-misans-medium text-[13px] text-black/30">
+            移除
+          </button>
+        </div>
+      </div>
+    )
+  }
+  return (
+    <button
+      onClick={onClick}
+      className="flex size-[138px] shrink-0 flex-col items-center justify-center gap-2 rounded-[20px] border border-black/[0.06] bg-black/[0.03] transition hover:bg-black/[0.06]"
+      title="查看大图"
+    >
+      <Spinner size={28} />
+      <span className="font-misans text-[12px] text-black/40">
+        {status === 'queued' ? '排队中…' : '生成中…'}
+      </span>
+    </button>
+  )
+}
+
+
 function UploadMethodMenu({
   onClose,
   onLocal,
