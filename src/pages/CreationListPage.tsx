@@ -20,10 +20,14 @@ export function CreationListPage() {
   const drafts = useQuery({
     queryKey: ['characters', 'draft'],
     queryFn: () => listCharacters('draft'),
+    staleTime: 30_000,
+    placeholderData: (prev) => prev,
   })
   const published = useQuery({
     queryKey: ['characters', 'published'],
     queryFn: () => listCharacters('published'),
+    staleTime: 30_000,
+    placeholderData: (prev) => prev,
   })
 
   const createMut = useMutation({
@@ -31,7 +35,10 @@ export function CreationListPage() {
       const draft = createEmptyCharacter('', email)
       return saveCharacter(draft)
     },
-    onSuccess: (res) => navigate(`/character/${res.character.id}`),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['characters', 'draft'] })
+      navigate(`/character/${res.character.id}`)
+    },
   })
 
   const deleteMut = useMutation({
