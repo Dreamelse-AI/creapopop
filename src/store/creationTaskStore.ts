@@ -4,6 +4,7 @@ import { generateImage } from '@/services/aiImage'
 import { uploadImage } from '@/services/upload'
 import { generateIntroPageHtml, chatIntroStyle, type IntroChatMessage } from '@/services/aiIntroPage'
 import { sendChatMessage, type ChatMessage } from '@/services/aiChat'
+import { loadIntroState, saveIntroState } from '@/services/introPersist'
 import { MAX_IMAGES } from '@/data/constants'
 import type { CharacterImage } from '@/types/character'
 
@@ -77,7 +78,14 @@ export const useCreationTaskStore = create<CreationTaskState>((set, get) => ({
 
   ensureScope: (id) => {
     if (get().scopeId === id) return
-    set({ scopeId: id, ...INITIAL })
+    // 切到新角色：先重置 transient 态，再从本地持久化恢复该角色的对话/风格说明
+    const restored = id ? loadIntroState(id) : null
+    set({
+      scopeId: id,
+      ...INITIAL,
+      introMessages: restored?.messages ?? [],
+      introStyleBrief: restored?.styleBrief ?? '',
+    })
   },
 
   // —— 形象：AI 生图 ——
@@ -162,11 +170,18 @@ export const useCreationTaskStore = create<CreationTaskState>((set, get) => ({
     set({ introMessages: next, introChatting: true, introError: null })
     try {
       const turn = await chatIntroStyle(draft, next)
-      set({ introMessages: [...next, { role: 'assistant', content: turn.reply }] })
+      const merged: IntroChatMessage[] = [...next, { role: 'assistant', content: turn.reply }]
+      set({ introMessages: merged })
       if (turn.keywords.length) patchIntro({ keywords: turn.keywords })
       if (turn.styleBrief) set({ introStyleBrief: turn.styleBrief })
+      // 写回本地持久化：对话历史 + 风格说明（按角色 id）
+      const sid = get().scopeId || draft.id
+      if (sid) saveIntroState(sid, { messages: merged, styleBrief: get().introStyleBrief })
     } catch (e) {
       set({ introError: e instanceof Error ? e.message : '对话失败' })
+      // 用户消息也要保存，避免刷新丢失
+      const sid = get().scopeId || draft.id
+      if (sid) saveIntroState(sid, { messages: next })
     } finally {
       set({ introChatting: false })
     }
@@ -238,5 +253,8 @@ function addImageToDraft(url: string, source: CharacterImage['source']) {
 function patchIntro(partial: Partial<import('@/types/character').IntroPage>) {
   const cur = useDraftStore.getState().data
   if (!cur) return
-  useDraftStore.getState().patch({ introPage: { ...cur.introPage, ...partial } })
+  const introPage = { ...cur.introPage, ...partial }
+  useDraftStore.getState().patch({ introPage })
+  // 同步写回本地持久化：Arca 契约暂不含 introPage，靠 localStorage 兜底刷新不丢
+  if (cur.id) saveIntroState(cur.id, { introPage })
 }

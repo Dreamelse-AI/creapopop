@@ -82,6 +82,8 @@ export async function chatIntroStyle(
       system,
       messages: history.map((m) => ({ role: m.role, content: m.content })),
       temperature: 0.7,
+      // styleBrief 较长，默认 1024 会把 JSON 截断 → 前端解析失败回退成原始文本
+      max_tokens: 2048,
     }),
   })
   const json = await res.json().catch(() => ({}))
@@ -99,8 +101,29 @@ export async function chatIntroStyle(
       styleBrief: typeof obj.styleBrief === 'string' ? obj.styleBrief.trim() : '',
     }
   } catch {
-    // 解析失败：把整段文本当作回复，关键词留空
-    return { reply: raw || '好的，我记下了。', keywords: [], styleBrief: raw }
+    // 解析失败（多为模型把 JSON 截断）：尽量从残缺文本里抠出 reply / keywords，
+    // 绝不把原始 JSON / 代码块直接塞进气泡。
+    return salvageTurn(jsonText)
+  }
+}
+
+// 从截断或不规范的 JSON 文本里救回字段，杜绝原始 JSON 进入对话气泡
+function salvageTurn(text: string): IntroStyleTurn {
+  const replyMatch = text.match(/"reply"\s*:\s*"((?:[^"\\]|\\.)*)"/)
+  const reply = replyMatch ? replyMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n').trim() : ''
+  const kwBlock = text.match(/"keywords"\s*:\s*\[([\s\S]*?)\]/)
+  const keywords = kwBlock
+    ? Array.from(kwBlock[1].matchAll(/"((?:[^"\\]|\\.)*)"/g))
+        .map((m) => m[1].trim())
+        .filter(Boolean)
+        .slice(0, 6)
+    : []
+  const briefMatch = text.match(/"styleBrief"\s*:\s*"((?:[^"\\]|\\.)*)"/)
+  const styleBrief = briefMatch ? briefMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n').trim() : reply
+  return {
+    reply: reply || '好的，我已经记下你的需求，可以点右上角「生成」试试。',
+    keywords,
+    styleBrief,
   }
 }
 
