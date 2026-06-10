@@ -27,6 +27,8 @@ body,
 #root {
   height: 100%;
   margin: 0;
+  overflow: hidden; /* 文档级不滚动，只允许区域内滚动 */
+  overscroll-behavior: none; /* 禁用橡皮筋回弹，避免露出底色 */
 }
 
 body {
@@ -37,7 +39,8 @@ body {
     'PingFang SC',
     'Microsoft YaHei',
     sans-serif;
-  background: var(--color-bg);
+  /* 与页面外壳同为灰色，即便有任何回弹也不会露出黄色 */
+  background: #f7f7f7;
   color: #000000;
 }
 
