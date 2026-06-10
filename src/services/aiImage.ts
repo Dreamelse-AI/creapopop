@@ -155,8 +155,10 @@ export async function generateImage(opts: {
 
   try {
     taskId = await arcaSubmitImage(opts.prompt, aspect, opts.characterId)
-  } catch {
+    console.info('[AI生图] ✅ 走 Arca 后端 (gen_appearance)')
+  } catch (e) {
     useArca = false
+    console.warn('[AI生图] ⚠️ Arca 失败，回退临时后端 (APIMart)。原因：', e)
     taskId = await localSubmitTask(opts.prompt, aspect, opts.referenceImages)
   }
 

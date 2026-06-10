@@ -124,10 +124,16 @@ export async function generateIntroPageHtml(
       const resp = await arcaPost<{ html: string }>('/character/gen_landing_page', {
         character_id: character.id,
       })
-      if (resp.html) return { keywords: [], html: resp.html }
-    } catch {
-      // Arca 不可用，fallback 到临时后端
+      if (resp.html) {
+        console.info('[AI介绍页] ✅ 走 Arca 后端 (gen_landing_page)')
+        return { keywords: [], html: resp.html }
+      }
+      console.warn('[AI介绍页] ⚠️ Arca 返回空 html，回退临时后端 (Claude)')
+    } catch (e) {
+      console.warn('[AI介绍页] ⚠️ Arca 失败，回退临时后端 (Claude)。原因：', e)
     }
+  } else {
+    console.info('[AI介绍页] ℹ️ 无 character_id，走临时后端 (Claude)')
   }
 
   // Fallback：临时后端 Claude 生成

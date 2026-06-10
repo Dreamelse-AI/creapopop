@@ -85,10 +85,16 @@ export async function sendChatMessage(
   if (character.id && lastUserMsg) {
     try {
       const text = await arcaChat(character.id, lastUserMsg)
-      if (text) return { text, items: parseAIResponse(text) }
-    } catch {
-      // Arca 不可用，fallback
+      if (text) {
+        console.info('[AI试聊] ✅ 走 Arca 后端 (chat_with_character)')
+        return { text, items: parseAIResponse(text) }
+      }
+      console.warn('[AI试聊] ⚠️ Arca 返回空，回退临时后端 (Gemini)')
+    } catch (e) {
+      console.warn('[AI试聊] ⚠️ Arca 失败，回退临时后端 (Gemini)。原因：', e)
     }
+  } else {
+    console.info('[AI试聊] ℹ️ 无 character_id 或无消息，走临时后端 (Gemini)')
   }
 
   // Fallback：临时后端 Gemini
