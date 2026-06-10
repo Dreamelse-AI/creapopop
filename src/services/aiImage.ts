@@ -33,11 +33,13 @@ interface ArcaTaskStatusResp {
   error_message?: string
 }
 
-async function arcaSubmitImage(prompt: string, aspect: ImageAspect): Promise<string> {
-  const resp = await arcaPost<ArcaTaskSubmitResp>('/character/gen_appearance', {
+async function arcaSubmitImage(prompt: string, aspect: ImageAspect, characterId?: string): Promise<string> {
+  const body: Record<string, unknown> = {
     description: prompt,
-    style_name: aspect === '1:1' ? '写实' : '写实',
-  })
+    style_name: '写实',
+  }
+  if (characterId) body.character_id = characterId
+  const resp = await arcaPost<ArcaTaskSubmitResp>('/character/gen_appearance', body)
   return resp.task_id
 }
 
@@ -142,6 +144,7 @@ async function localPollTask(taskId: string): Promise<ImageTaskStatus> {
 export async function generateImage(opts: {
   prompt: string
   aspect?: ImageAspect
+  characterId?: string
   referenceImages?: string[]
   onUpdate?: (s: ImageTaskStatus) => void
   timeoutMs?: number
@@ -151,7 +154,7 @@ export async function generateImage(opts: {
   let useArca = true
 
   try {
-    taskId = await arcaSubmitImage(opts.prompt, aspect)
+    taskId = await arcaSubmitImage(opts.prompt, aspect, opts.characterId)
   } catch {
     useArca = false
     taskId = await localSubmitTask(opts.prompt, aspect, opts.referenceImages)
