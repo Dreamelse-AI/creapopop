@@ -3,8 +3,9 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
 
-// 前端开发端口 5173，API 请求代理到本地 Node 后端 9527
-// Arca 路径 /arca 代理到 preview 后端（联调时 VITE_API_BASE_URL=/arca）
+// 前端开发端口 5173
+// /api 代理到 Arca 海外后端（对齐 popop-fe 方案）
+// /local-api 代理到本地临时后端（AI 代理等暂未迁移的接口）
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
@@ -15,15 +16,22 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api': {
+      '/local-api': {
         target: 'http://127.0.0.1:9527',
         changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/local-api/, '/api'),
       },
-      '/arca': {
+      '/api': {
         target: 'https://i18n-api.imaginewithu.com',
         changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/arca/, ''),
-        secure: true,
+        rewrite: (p) => p.replace(/^\/api/, ''),
+        secure: false,
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            proxyReq.removeHeader('origin');
+            proxyReq.removeHeader('referer');
+          });
+        },
       },
     },
   },
