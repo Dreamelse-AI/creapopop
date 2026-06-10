@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useDraftStore } from '@/store/draftStore'
+import { useCreationTaskStore } from '@/store/creationTaskStore'
 import { INTRO_CONTENT_FIELDS, INTRO_TEMPLATES, DETAIL_FIELDS, MAX_IMAGES } from '@/data/constants'
-import { generateIntroPageHtml, chatIntroStyle } from '@/services/aiIntroPage'
 import type { IntroChatMessage } from '@/services/aiIntroPage'
 import { uploadImage } from '@/services/upload'
 import { SectionTitle, Spinner } from '@/components/ui/primitives'
@@ -9,17 +9,18 @@ import type { CharacterImage, IntroTemplate } from '@/types/character'
 
 // 介绍页美化 — 严格对照设计稿 2219:8492 / 2228:13817。
 // 三栏：左=选择展示内容(主图+新增位+勾选列表) | 中=Agent 卡片(关键词/生成 + 横排模板 + 对话 + 输入) | 右=rail(PreviewPanel)
+// 对话历史 + 生成态挂在 creationTaskStore，切换左侧导航不丢消息、不丢转圈。
 export function IntroPageSection() {
   const data = useDraftStore((s) => s.data)!
   const patch = useDraftStore((s) => s.patch)
   const [vibe, setVibe] = useState('')
-  const [chatting, setChatting] = useState(false)
-  const [generating, setGenerating] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  // 与模型的对话历史（仅本地，用于上下文与气泡展示）
-  const [messages, setMessages] = useState<IntroChatMessage[]>([])
-  // 模型整理出的风格说明，点「生成」时作为产出 HTML 的依据
-  const [styleBrief, setStyleBrief] = useState('')
+
+  const messages = useCreationTaskStore((s) => s.introMessages)
+  const chatting = useCreationTaskStore((s) => s.introChatting)
+  const generating = useCreationTaskStore((s) => s.introGenerating)
+  const error = useCreationTaskStore((s) => s.introError)
+  const sendIntroMessage = useCreationTaskStore((s) => s.sendIntroMessage)
+  const generateIntro = useCreationTaskStore((s) => s.generateIntro)
 
   const introPage = data.introPage
 
@@ -37,54 +38,16 @@ export function IntroPageSection() {
   }
 
   // 发送 = 与模型对话：模型整理需求 → 回复 + 关键词 + 风格说明（不产出 HTML）
-  const sendMessage = async () => {
+  const sendMessage = () => {
     const text = vibe.trim()
     if (!text || chatting || generating) return
-    const next: IntroChatMessage[] = [...messages, { role: 'user', content: text }]
-    setMessages(next)
     setVibe('')
-    setChatting(true)
-    setError(null)
-    try {
-      const turn = await chatIntroStyle(data, next)
-      setMessages([...next, { role: 'assistant', content: turn.reply }])
-      if (turn.keywords.length) patch({ introPage: { ...introPage, keywords: turn.keywords } })
-      if (turn.styleBrief) setStyleBrief(turn.styleBrief)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '对话失败')
-    } finally {
-      setChatting(false)
-    }
+    void sendIntroMessage(text)
   }
 
   // 生成 = 根据已沟通的风格说明产出 HTML（右上角按钮，独立于发送）
-  const runGenerate = async () => {
-    if (generating || chatting) return
-    // 优先用模型整理的风格说明；没有就退回最近一次用户输入或当前输入框
-    const brief =
-      styleBrief.trim() ||
-      [...messages].reverse().find((m) => m.role === 'user')?.content ||
-      vibe.trim()
-    if (!brief) {
-      setError('请先在下方描述你想要的风格')
-      return
-    }
-    setGenerating(true)
-    setError(null)
-    try {
-      const { keywords, html } = await generateIntroPageHtml(data, brief)
-      patch({
-        introPage: {
-          ...introPage,
-          customHtml: html,
-          keywords: keywords.length ? keywords : introPage.keywords,
-        },
-      })
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '生成失败')
-    } finally {
-      setGenerating(false)
-    }
+  const runGenerate = () => {
+    void generateIntro()
   }
 
   const fileRef = useRef<HTMLInputElement>(null)

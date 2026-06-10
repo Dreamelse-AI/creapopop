@@ -1,20 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { useDraftStore } from '@/store/draftStore'
+import { useCreationTaskStore } from '@/store/creationTaskStore'
 import { MAX_IMAGES } from '@/data/constants'
 import type { CharacterImage } from '@/types/character'
-import { generateImage } from '@/services/aiImage'
-import { uploadImage } from '@/services/upload'
 import { Spinner } from '@/components/ui/primitives'
 
 // 形象：上传/AI生图构成虚拟形象库，可设为基础形象/删除。
 // 框架对齐 Figma：头部(标题+计数+批量删除) + 138 网格(上传位弹方式菜单 + 图片悬浮操作)。
-
-// 进行中的生图任务：在网格里占一个「生成中」的图块，完成后替换为真实图片。
-interface PendingGen {
-  id: string
-  status: 'queued' | 'running' | 'error'
-  error?: string
-}
+// 进行中的生图/上传任务挂在 creationTaskStore，脱离本组件生命周期：
+// 切换左侧导航不会中断、不会丢转圈，切回仍是进行中状态。
 
 export function ImageSection() {
   const data = useDraftStore((s) => s.data)!
@@ -25,78 +19,35 @@ export function ImageSection() {
   const [methodOpen, setMethodOpen] = useState(false)
   const [batchMode, setBatchMode] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [pending, setPending] = useState<PendingGen | null>(null)
-  const [genError, setGenError] = useState<string | null>(null)
   const [viewerOpen, setViewerOpen] = useState(false)
-  const [uploading, setUploading] = useState(false)
+
+  const pending = useCreationTaskStore((s) => s.pendingGen)
+  const genError = useCreationTaskStore((s) => s.genError)
+  const uploading = useCreationTaskStore((s) => s.uploadingImage)
+  const generateAppearance = useCreationTaskStore((s) => s.generateAppearance)
+  const dismissGen = useCreationTaskStore((s) => s.dismissGen)
+  const uploadImages = useCreationTaskStore((s) => s.uploadImages)
 
   const count = data.images.length
 
-  const addImage = (url: string, source: CharacterImage['source']) => {
-    const img: CharacterImage = {
-      id: `img_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      url,
-      source,
-    }
-    const images = [...data.images, img]
-    patch({ images, primaryImageId: data.primaryImageId || img.id })
-  }
-
-  // 点「生成」：立刻关闭弹窗 + 在网格插入「生成中」图块，生图在后台跑，完成后替换。
-  const runGenerate = async () => {
+  // 点「生成」：关闭弹窗，任务交给 store 在后台跑，完成后自动落图。
+  const runGenerate = () => {
     const p = prompt.trim()
     if (!p || pending || count >= MAX_IMAGES) return
-    setGenError(null)
-    const genId = `gen_${Date.now()}`
-    setPending({ id: genId, status: 'queued' })
     setPrompt('')
     setAiOpen(false)
-
-    const result = await generateImage({
-      prompt: p,
-      aspect: '9:16',
-      onUpdate: (s) => {
-        if (s.status === 'queued' || s.status === 'running') {
-          const st = s.status
-          setPending((prev) => (prev && prev.id === genId ? { ...prev, status: st } : prev))
-        }
-      },
-    })
-
-    if (result.status === 'done' && result.imageUrl) {
-      addImage(result.imageUrl, 'ai')
-      setPending(null)
-      setViewerOpen(false)
-    } else {
-      setPending({ id: genId, status: 'error', error: result.error || '生成失败' })
-    }
+    void generateAppearance(p)
   }
 
   const retryGenerate = () => {
-    setPending(null)
+    dismissGen()
     setViewerOpen(false)
     setAiOpen(true)
   }
 
-  const onFiles = async (files: FileList | null) => {
+  const onFiles = (files: FileList | null) => {
     if (!files) return
-    const room = MAX_IMAGES - count
-    const picked = Array.from(files).slice(0, room)
-    if (!picked.length) return
-    setUploading(true)
-    const newImgs: CharacterImage[] = []
-    for (const f of picked) {
-      try {
-        const { url } = await uploadImage(f)
-        newImgs.push({ id: `img_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, url, source: 'upload' })
-      } catch (e) {
-        setGenError(e instanceof Error ? e.message : '上传失败')
-      }
-    }
-    setUploading(false)
-    if (!newImgs.length) return
-    const images = [...data.images, ...newImgs]
-    patch({ images, primaryImageId: data.primaryImageId || images[0]?.id || null })
+    void uploadImages(Array.from(files))
   }
 
   const remove = (ids: string[]) => {
@@ -224,7 +175,7 @@ export function ImageSection() {
             status={pending.status}
             onClick={() => setViewerOpen(true)}
             onRetry={retryGenerate}
-            onDismiss={() => setPending(null)}
+            onDismiss={() => dismissGen()}
           />
         )}
       </div>
