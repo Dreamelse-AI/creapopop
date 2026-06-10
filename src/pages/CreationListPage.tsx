@@ -107,7 +107,7 @@ export function CreationListPage() {
         )}
 
         {!isLoading && !isError && !isEmpty && (
-          <div className="flex w-full flex-col gap-10">
+          <div className="flex min-h-full w-full flex-col gap-10">
             {/* 草稿箱 */}
             <section className="flex flex-col gap-2">
               <div className="flex items-center justify-between px-10 py-1.5">
@@ -151,7 +151,7 @@ export function CreationListPage() {
             </section>
 
             {/* 已发布 */}
-            <section className="flex flex-col gap-2">
+            <section className="flex flex-1 flex-col gap-2">
               <div className="flex items-center justify-between px-10 py-1.5">
                 <h2 className="font-misans text-[16px] text-black/30">已发布 {publishedList.length}</h2>
                 {publishedList.length > 3 && (
@@ -164,7 +164,9 @@ export function CreationListPage() {
                 )}
               </div>
               {publishedList.length === 0 ? (
-                <p className="font-misans px-10 text-[14px] text-black/30">还没有发布的角色</p>
+                <div className="flex min-h-[200px] flex-1 items-center justify-center">
+                  <p className="font-misans text-[14px] text-black/30">还没有发布的角色</p>
+                </div>
               ) : (
                 <div className="flex gap-4 overflow-x-auto px-10 pb-2">
                   {publishedList.map((c) => (

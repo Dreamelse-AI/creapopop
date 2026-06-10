@@ -86,7 +86,11 @@ export function CharacterCard({
           {variant === 'draft' && <EditIcon dark={unnamed || !cover} />}
         </button>
         <button onClick={stop(onDelete)} title="删除" className="size-6 shrink-0">
-          <img src="/assets/icon-delete.svg" alt="删除" className="size-full" />
+          <img
+            src="/assets/icon-delete.svg"
+            alt="删除"
+            className={`size-full ${variant === 'draft' && !cover ? 'opacity-30 brightness-0' : ''}`}
+          />
         </button>
       </div>
 
@@ -153,7 +157,7 @@ function EmptyCoverPattern() {
       <img
         src="/assets/card-empty-pattern.svg"
         alt=""
-        className="pointer-events-none absolute left-[-19px] top-[71px] h-[576px] w-[960px] opacity-[0.04]"
+        className="pointer-events-none absolute left-[-19px] top-[-89px] h-[576px] w-[960px] opacity-[0.04]"
       />
     </div>
   )
