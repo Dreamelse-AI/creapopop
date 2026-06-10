@@ -33,7 +33,7 @@ interface ArcaTaskStatusResp {
   error_message?: string
 }
 
-async function arcaSubmitImage(prompt: string, aspect: ImageAspect, characterId?: string): Promise<string> {
+async function arcaSubmitImage(prompt: string, _aspect: ImageAspect, characterId?: string): Promise<string> {
   const body: Record<string, unknown> = {
     description: prompt,
     style_name: '写实',
