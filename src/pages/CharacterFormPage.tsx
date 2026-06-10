@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useDraftStore } from '@/store/draftStore'
+import { useCreationTaskStore } from '@/store/creationTaskStore'
 import { useAutoSave } from '@/hooks/useAutoSave'
 import { getCharacter, deleteCharacter } from '@/services/characterApi'
 import { Spinner } from '@/components/ui/primitives'
@@ -16,12 +17,15 @@ import { PreviewPanel } from '@/components/preview/PreviewPanel'
 
 type SectionKey = 'basic' | 'image' | 'details' | 'greetings' | 'introPage' | 'dynamicNew' | 'dynamicHistory'
 
-const NAV_GROUPS: { title: string; items: { key: SectionKey; label: string; enabled: boolean }[] }[] = [
+const SECTION_KEYS: SectionKey[] = ['basic', 'image', 'details', 'greetings', 'introPage', 'dynamicNew', 'dynamicHistory']
+
+// required=true：发布必填项，tab 名右侧显示星号
+const NAV_GROUPS: { title: string; items: { key: SectionKey; label: string; enabled: boolean; required?: boolean }[] }[] = [
   {
     title: '角色设定',
     items: [
-      { key: 'basic', label: '📝 基本信息', enabled: true },
-      { key: 'image', label: '🖼 形象', enabled: true },
+      { key: 'basic', label: '📝 基本信息', enabled: true, required: true },
+      { key: 'image', label: '🖼 形象', enabled: true, required: true },
       { key: 'details', label: '📓 更多细节', enabled: true },
       { key: 'greetings', label: '💬 开场白', enabled: true },
     ],
@@ -42,8 +46,13 @@ const NAV_GROUPS: { title: string; items: { key: SectionKey; label: string; enab
 export function CharacterFormPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const [params] = useSearchParams()
   const { data, setData, reset, saveStatus } = useDraftStore()
-  const [active, setActive] = useState<SectionKey>('basic')
+  // 初始定位：URL ?tab= 指定（已发布卡片「编辑」→basic，「动态」→dynamicNew）
+  const initialTab = params.get('tab')
+  const [active, setActive] = useState<SectionKey>(
+    initialTab && SECTION_KEYS.includes(initialTab as SectionKey) ? (initialTab as SectionKey) : 'basic',
+  )
   const [deleting, setDeleting] = useState(false)
 
   useAutoSave()
@@ -59,6 +68,11 @@ export function CharacterFormPage() {
     return () => reset()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query.data])
+
+  // 进行中任务按角色作用域：切到不同角色才清空（同角色内切导航/收起预览不丢）
+  useEffect(() => {
+    if (id) useCreationTaskStore.getState().ensureScope(id)
+  }, [id])
 
   if (query.isLoading || !data) {
     return (
@@ -131,7 +145,10 @@ export function CharacterFormPage() {
                 {active === item.key && (
                   <span className="absolute left-2 right-2 top-2 h-11 rounded-[100px] bg-black/[0.03]" />
                 )}
-                <span className="font-misans relative text-[16px] text-black">{item.label}</span>
+                <span className="font-misans relative flex items-center gap-0.5 text-[16px] text-black">
+                  {item.label}
+                  {item.required && <RequiredStar />}
+                </span>
               </button>
             ))}
           </div>
@@ -160,6 +177,17 @@ export function CharacterFormPage() {
       {/* 右侧预览面板 */}
       <PreviewPanel />
     </div>
+  )
+}
+
+// 必填标记星号（设计稿 intro-star 形状），染成强调红
+function RequiredStar() {
+  return (
+    <span className="ml-0.5 inline-flex size-2.5 shrink-0 items-center justify-center" title="必填">
+      <svg viewBox="0 0 16.5488 16.5488" className="size-full" fill="#ff3c00">
+        <path d="M6.78597 2.04834C7.24974 0.872449 7.48162 0.284505 7.81434 0.112108C8.10283 -0.0373692 8.44596 -0.0373692 8.73444 0.112108C9.06717 0.284505 9.29905 0.87245 9.76282 2.04834L10.083 2.86019C10.4588 3.81311 10.6467 4.28957 10.9345 4.69133C11.1895 5.04745 11.5013 5.35926 11.8575 5.61431C12.2592 5.90204 12.7357 6.08996 13.6886 6.46578L14.5004 6.78597C15.6763 7.24974 16.2643 7.48162 16.4367 7.81434C16.5862 8.10283 16.5862 8.44596 16.4367 8.73444C16.2643 9.06717 15.6763 9.29905 14.5004 9.76282L13.6886 10.083C12.7357 10.4588 12.2592 10.6467 11.8575 10.9345C11.5013 11.1895 11.1895 11.5013 10.9345 11.8575C10.6467 12.2592 10.4588 12.7357 10.083 13.6886L9.76282 14.5004C9.29905 15.6763 9.06717 16.2643 8.73444 16.4367C8.44596 16.5862 8.10283 16.5862 7.81434 16.4367C7.48162 16.2643 7.24973 15.6763 6.78597 14.5004L6.46578 13.6886C6.08996 12.7357 5.90204 12.2592 5.61431 11.8575C5.35926 11.5013 5.04745 11.1895 4.69133 10.9345C4.28957 10.6467 3.81311 10.4588 2.86019 10.083L2.04834 9.76282C0.872449 9.29905 0.284505 9.06717 0.112108 8.73444C-0.0373692 8.44596 -0.0373692 8.10283 0.112108 7.81434C0.284505 7.48162 0.87245 7.24973 2.04834 6.78597L2.86019 6.46578C3.81311 6.08996 4.28957 5.90204 4.69133 5.61431C5.04745 5.35926 5.35926 5.04745 5.61431 4.69133C5.90204 4.28957 6.08996 3.81311 6.46578 2.86019L6.78597 2.04834Z" />
+      </svg>
+    </span>
   )
 }
 

@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useDraftStore } from '@/store/draftStore'
+import { useCreationTaskStore } from '@/store/creationTaskStore'
 import { DETAIL_FIELDS } from '@/data/constants'
 import { SandboxHtml } from './SandboxHtml'
-import { sendChatMessage, type ChatMessage } from '@/services/aiChat'
+import { type ChatMessage } from '@/services/aiChat'
 import type { MessageItem } from '@/prompts/types'
 import { Spinner } from '@/components/ui/primitives'
 
@@ -222,10 +223,11 @@ function ChatPreview() {
   const data = useDraftStore((s) => s.data)!
   const cover =
     data.images.find((i) => i.id === data.primaryImageId)?.url || data.images[0]?.url || ''
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const messages = useCreationTaskStore((s) => s.chatMessages)
+  const loading = useCreationTaskStore((s) => s.chatLoading)
+  const error = useCreationTaskStore((s) => s.chatError)
+  const sendChat = useCreationTaskStore((s) => s.sendChat)
   const [input, setInput] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   const firstGreeting = data.greetings.filter(Boolean)[0]
   const display: ChatMessage[] =
@@ -233,22 +235,11 @@ function ChatPreview() {
       ? [{ role: 'assistant', content: firstGreeting, items: [{ type: 'text', data: { content: firstGreeting } }] }]
       : messages
 
-  const send = async () => {
+  const send = () => {
     const text = input.trim()
     if (!text || loading) return
-    const next: ChatMessage[] = [...messages, { role: 'user', content: text }]
-    setMessages(next)
     setInput('')
-    setLoading(true)
-    setError(null)
-    try {
-      const { text: raw, items } = await sendChatMessage(data, next)
-      setMessages([...next, { role: 'assistant', content: raw, items }])
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '对话失败')
-    } finally {
-      setLoading(false)
-    }
+    void sendChat(text)
   }
 
   return (
