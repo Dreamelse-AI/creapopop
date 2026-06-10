@@ -64,7 +64,7 @@ export function DynamicSection() {
   return (
     <div className="flex w-[600px] flex-col gap-4">
       <div className="flex flex-col gap-0.5 px-3 py-1.5">
-        <h2 className="font-misans text-[16px] text-black/30">新建动态</h2>
+        <h2 className="font-misans-medium text-[16px] text-black/30">新建动态</h2>
         <p className="font-misans-medium text-[14px] text-black/30">
           发布动态同时也会发布角色。为角色发布图片和文案，让粉丝看到更多内容。
         </p>

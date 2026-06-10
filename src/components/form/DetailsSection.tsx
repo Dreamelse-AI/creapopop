@@ -65,9 +65,10 @@ export function DetailsSection() {
               </p>
               <button
                 onClick={() => setEditing(null)}
-                className="absolute right-4 top-1 text-2xl leading-none text-black/40"
+                className="absolute right-4 top-1 flex size-6 items-center justify-center"
+                aria-label="关闭"
               >
-                ×
+                <img src="/assets/icon-field-clear.svg" alt="关闭" className="size-full" />
               </button>
             </div>
             <div className="px-4 py-2">

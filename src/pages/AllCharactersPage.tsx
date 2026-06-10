@@ -6,7 +6,7 @@ import {
   listCharacters,
   publishCharacter,
 } from '@/services/characterApi'
-import { Spinner } from '@/components/ui/primitives'
+import { FullscreenLoading } from '@/components/ui/primitives'
 
 type Tab = 'draft' | 'published'
 
@@ -74,9 +74,8 @@ export function AllCharactersPage() {
       {/* 卡片平铺网格 */}
       <main className="min-h-0 flex-1 overflow-y-auto px-5 pb-8">
         {isLoading ? (
-          <div className="flex h-40 flex-col items-center justify-center gap-3 text-black/40">
-            <Spinner size={28} className="text-black/30" />
-            <span>加载中…</span>
+          <div className="h-40">
+            <FullscreenLoading />
           </div>
         ) : list.length === 0 ? (
           <div className="flex h-40 items-center justify-center text-black/30">暂无内容</div>

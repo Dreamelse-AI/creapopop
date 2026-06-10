@@ -6,7 +6,7 @@ import { useCreationTaskStore } from '@/store/creationTaskStore'
 import { useAutoSave } from '@/hooks/useAutoSave'
 import { getCharacter, deleteCharacter } from '@/services/characterApi'
 import { loadIntroState, saveIntroState, clearIntroState } from '@/services/introPersist'
-import { Spinner } from '@/components/ui/primitives'
+import { Spinner, FullscreenLoading } from '@/components/ui/primitives'
 import { BasicInfoSection } from '@/components/form/BasicInfoSection'
 import { ImageSection } from '@/components/form/ImageSection'
 import { DetailsSection } from '@/components/form/DetailsSection'
@@ -89,12 +89,7 @@ export function CharacterFormPage() {
   }, [id])
 
   if (query.isLoading || !data) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 text-black/40">
-        <Spinner size={28} className="text-black/30" />
-        <span>加载中…</span>
-      </div>
-    )
+    return <FullscreenLoading />
   }
   if (query.isError) {
     return (
@@ -146,7 +141,7 @@ export function CharacterFormPage() {
             className="flex flex-col py-4 shadow-[inset_0px_-1px_0px_0px_rgba(0,0,0,0.06)]"
           >
             <div className="px-4">
-              <p className="p-3 font-misans text-[14px] text-black/30">{group.title}</p>
+              <p className="p-3 font-misans-medium text-[14px] text-black/30">{group.title}</p>
             </div>
             {group.items.map((item) => (
               <button

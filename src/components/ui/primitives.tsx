@@ -13,7 +13,21 @@ export function Spinner({ size = 16, className = '' }: { size?: number; classNam
   )
 }
 
-// 胶囊按钮（圆角 100px），对齐设计稿
+// 全屏/大区域加载：🌀 80px 转圈动画，居中。用于整页/面板/预览渲染/AI生图大图等大场景。
+// 只转圈、无文案。需要铺满父容器时父级给定高度即可（组件本身 h-full w-full 居中）。
+export function FullscreenLoading({ className = '' }: { className?: string }) {
+  return (
+    <div
+      role="status"
+      aria-label="加载中"
+      className={`flex h-full w-full items-center justify-center ${className}`}
+    >
+      <span className="inline-block animate-spin text-[80px] leading-none">🌀</span>
+    </div>
+  )
+}
+
+
 export function PillButton({
   children,
   variant = 'solid',
@@ -74,7 +88,7 @@ export function SectionTitle({
 }) {
   return (
     <div className={`flex items-center px-3 py-1.5 ${className}`}>
-      <h2 className="font-misans text-[16px] text-black/30">{children}</h2>
+      <h2 className="font-misans-medium text-[16px] text-black/30">{children}</h2>
     </div>
   )
 }

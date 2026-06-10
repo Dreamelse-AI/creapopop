@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Spinner } from '@/components/ui/primitives'
+import { FullscreenLoading } from '@/components/ui/primitives'
 
 // iframe 沙箱渲染 Claude 生成的 HTML。sandbox 不含 allow-same-origin/scripts，
 // 隔离外部页面与用户数据，防注入。与 newcreation CharacterShowcaseSheet 一致。
@@ -21,9 +21,8 @@ export function SandboxHtml({ html, className = '' }: { html: string; className?
         className={`h-full w-full border-0 ${className}`}
       />
       {!loaded && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white">
-          <Spinner size={28} className="text-black/30" />
-          <span className="font-misans text-[14px] text-black/40">渲染中…</span>
+        <div className="absolute inset-0 bg-white">
+          <FullscreenLoading />
         </div>
       )}
     </div>

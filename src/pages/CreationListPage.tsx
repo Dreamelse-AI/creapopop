@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { TopNav } from '@/components/layout/TopNav'
 import { CharacterCard } from '@/components/character/CharacterCard'
-import { PillButton, Spinner } from '@/components/ui/primitives'
+import { PillButton, Spinner, FullscreenLoading } from '@/components/ui/primitives'
 import {
   deleteCharacter,
   listCharacters,
@@ -67,7 +67,7 @@ export function CreationListPage() {
       <TopNav />
 
       <main className="min-h-0 flex-1 overflow-y-auto pb-[30px] pt-2">
-        {isLoading && <CenterHint text="加载中…" />}
+        {isLoading && <FullscreenLoading />}
 
         {isError && (
           <div className="px-10">
@@ -187,15 +187,6 @@ export function CreationListPage() {
           </div>
         )}
       </main>
-    </div>
-  )
-}
-
-function CenterHint({ text }: { text: string }) {
-  return (
-    <div className="flex h-full flex-col items-center justify-center gap-3 text-black/40">
-      <Spinner size={28} className="text-black/30" />
-      <span>{text}</span>
     </div>
   )
 }

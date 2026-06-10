@@ -3,7 +3,7 @@ import { useDraftStore } from '@/store/draftStore'
 import { useCreationTaskStore } from '@/store/creationTaskStore'
 import { MAX_IMAGES } from '@/data/constants'
 import type { CharacterImage } from '@/types/character'
-import { Spinner } from '@/components/ui/primitives'
+import { Spinner, FullscreenLoading } from '@/components/ui/primitives'
 
 // 形象：上传/AI生图构成虚拟形象库，可设为基础形象/删除。
 // 框架对齐 Figma：头部(标题+计数+批量删除) + 138 网格(上传位弹方式菜单 + 图片悬浮操作)。
@@ -20,6 +20,7 @@ export function ImageSection() {
   const [batchMode, setBatchMode] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [viewerOpen, setViewerOpen] = useState(false)
+  const [viewingUrl, setViewingUrl] = useState<string | null>(null)
 
   const pending = useCreationTaskStore((s) => s.pendingGen)
   const genError = useCreationTaskStore((s) => s.genError)
@@ -29,6 +30,9 @@ export function ImageSection() {
   const uploadImages = useCreationTaskStore((s) => s.uploadImages)
 
   const count = data.images.length
+  // 与 PreviewPanel/IntroPageSection 口径一致：primaryImageId 缺失时回退首图，
+  // 保证二次进入（后端回包 id 重建）后基础形象标签仍能稳定展示。
+  const resolvedPrimaryId = data.primaryImageId || data.images[0]?.id || null
 
   // 点「生成」：关闭弹窗，任务交给 store 在后台跑，完成后自动落图。
   const runGenerate = () => {
@@ -81,7 +85,7 @@ export function ImageSection() {
       <div className="flex items-center gap-2">
         <div className="flex flex-1 flex-col gap-0.5 px-3 py-1.5">
           <div className="flex items-center gap-1">
-            <h2 className="font-misans text-[16px] text-black/30">角色形象</h2>
+            <h2 className="font-misans-medium text-[16px] text-black/30">角色形象</h2>
             <span className="rounded-[100px] bg-black/20 px-1.5 py-0.5 font-misans-semibold text-[12px] text-white">
               {count}/{MAX_IMAGES}
             </span>
@@ -160,12 +164,13 @@ export function ImageSection() {
           <ImageTile
             key={img.id}
             image={img}
-            isPrimary={img.id === data.primaryImageId}
+            isPrimary={img.id === resolvedPrimaryId}
             batchMode={batchMode}
             checked={selected.has(img.id)}
             onToggleSelect={() => toggleSelect(img.id)}
             onSetPrimary={() => patch({ primaryImageId: img.id })}
             onDelete={() => remove([img.id])}
+            onView={() => setViewingUrl(img.url)}
           />
         ))}
 
@@ -188,7 +193,7 @@ export function ImageSection() {
             className="absolute left-5 top-5 flex size-10 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
             aria-label="关闭"
           >
-            <CloseIcon />
+            <img src="/assets/icon-field-clear.svg" alt="关闭" className="size-6 brightness-0 invert" />
           </button>
           <div className="flex h-[80vh] max-h-[720px] w-[min(420px,90vw)] flex-col items-center justify-center gap-4 rounded-[24px] bg-white/[0.06]">
             {pending.status === 'error' ? (
@@ -202,12 +207,31 @@ export function ImageSection() {
                 </button>
               </div>
             ) : (
-              <>
-                <Spinner size={48} className="text-white/70" />
-                <p className="font-misans text-[16px] text-white/70">生成中…</p>
-              </>
+              <FullscreenLoading />
             )}
           </div>
+        </div>
+      )}
+
+      {/* 查看大图蒙层（已落地的形象图） */}
+      {viewingUrl && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-6"
+          onClick={() => setViewingUrl(null)}
+        >
+          <button
+            onClick={() => setViewingUrl(null)}
+            className="absolute right-5 top-5 flex size-10 items-center justify-center rounded-full bg-white/15 transition hover:bg-white/25"
+            aria-label="关闭"
+          >
+            <img src="/assets/icon-field-clear.svg" alt="关闭" className="size-6 brightness-0 invert" />
+          </button>
+          <img
+            src={viewingUrl}
+            alt=""
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[90vh] max-w-[90vw] rounded-[24px] object-contain"
+          />
         </div>
       )}
 
@@ -217,8 +241,8 @@ export function ImageSection() {
           <div className="flex w-[422px] flex-col rounded-[30px] bg-[#f7f7f7] py-4">
             <div className="flex items-start justify-between px-4 py-2">
               <p className="font-black-han text-[24px] text-black">AI生图</p>
-              <button onClick={() => setAiOpen(false)} className="text-2xl leading-none text-black/40">
-                ×
+              <button onClick={() => setAiOpen(false)} className="flex size-6 shrink-0 items-center justify-center" aria-label="关闭">
+                <img src="/assets/icon-field-clear.svg" alt="关闭" className="size-full" />
               </button>
             </div>
             <div className="flex h-[400px] flex-col px-4 py-2">
@@ -259,15 +283,6 @@ export function ImageSection() {
 
       <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => onFiles(e.target.files)} />
     </div>
-  )
-}
-
-// 关闭图标（内联 SVG）
-function CloseIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <path d="M6 6l12 12M18 6L6 18" />
-    </svg>
   )
 }
 
@@ -337,13 +352,13 @@ function UploadMethodMenu({
       className="absolute left-0 top-[142px] z-20 flex w-[175px] flex-col rounded-[20px] bg-white px-4 py-3 shadow-[0px_10px_30px_rgba(0,0,0,0.1)]"
     >
       <button onClick={onLocal} className="flex h-10 items-center gap-2 rounded-[12px] py-1.5">
-        <img src="/assets/icon-gallery.svg" alt="" className="size-6" />
-        <span className="font-misans-heavy text-[16px] text-black">从本地上传</span>
+        <img src="/assets/menu-gallery.svg" alt="" className="size-6" />
+        <span className="font-misans-medium text-[16px] text-black">从本地上传</span>
       </button>
       <div className="my-1 h-px w-full bg-black/10" />
       <button onClick={onAi} className="flex h-10 items-center gap-2 rounded-[12px] py-1.5">
-        <span className="flex size-6 items-center justify-center text-[16px]">✨</span>
-        <span className="font-misans-heavy text-[16px] text-black">AI生图</span>
+        <img src="/assets/intro-star.svg" alt="" className="size-6 [filter:brightness(0)_opacity(0.5)]" />
+        <span className="font-misans-medium text-[16px] text-black">AI生图</span>
       </button>
     </div>
   )
@@ -358,6 +373,7 @@ function ImageTile({
   onToggleSelect,
   onSetPrimary,
   onDelete,
+  onView,
 }: {
   image: CharacterImage
   isPrimary: boolean
@@ -366,6 +382,7 @@ function ImageTile({
   onToggleSelect: () => void
   onSetPrimary: () => void
   onDelete: () => void
+  onView: () => void
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -383,12 +400,12 @@ function ImageTile({
         onClick={() => (batchMode ? onToggleSelect() : setMenuOpen((v) => !v))}
         className="block size-full overflow-hidden rounded-[20px] border border-black/[0.06]"
       >
-        <img src={image.url} alt="" className="size-full object-cover" />
+        <img src={image.url} alt="" className="size-full object-cover object-top" />
       </button>
 
       {isPrimary && (
         <span className="pointer-events-none absolute left-1 top-1 rounded-[100px] bg-[rgba(48,48,48,0.9)] px-2 py-1 font-misans-bold text-[12px] text-white">
-          基本图像
+          基础形象
         </span>
       )}
 
@@ -404,8 +421,19 @@ function ImageTile({
 
       {!batchMode && menuOpen && (
         <div className="absolute left-0 top-[142px] z-20 flex w-[175px] flex-col rounded-[20px] bg-white px-4 py-3 shadow-[0px_10px_30px_rgba(0,0,0,0.1)]">
+          <button
+            onClick={() => {
+              onView()
+              setMenuOpen(false)
+            }}
+            className="flex h-10 items-center gap-2 rounded-[12px] py-1.5"
+          >
+            <img src="/assets/icon-view.svg" alt="" className="size-6" />
+            <span className="font-misans-medium text-[16px] text-black">查看大图</span>
+          </button>
           {!isPrimary && (
             <>
+              <div className="my-1 h-px w-full bg-black/10" />
               <button
                 onClick={() => {
                   onSetPrimary()
@@ -413,12 +441,12 @@ function ImageTile({
                 }}
                 className="flex h-10 items-center gap-2 rounded-[12px] py-1.5"
               >
-                <img src="/assets/icon-user.svg" alt="" className="size-6" />
+                <img src="/assets/intro-star.svg" alt="" className="size-6 [filter:brightness(0)]" />
                 <span className="font-misans-medium text-[16px] text-black">设为基础形象</span>
               </button>
-              <div className="my-1 h-px w-full bg-black/10" />
             </>
           )}
+          <div className="my-1 h-px w-full bg-black/10" />
           <button
             onClick={() => {
               onDelete()
@@ -426,7 +454,7 @@ function ImageTile({
             }}
             className="flex h-10 items-center gap-2 rounded-[12px] py-1.5"
           >
-            <img src="/assets/icon-delete-dark.svg" alt="" className="size-6" />
+            <img src="/assets/icon-delete-red.svg" alt="" className="size-6" />
             <span className="font-misans-medium text-[16px] text-[#ff3c00]">删除</span>
           </button>
         </div>
