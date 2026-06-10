@@ -40,7 +40,14 @@ function serveStatic(req, res) {
         return;
     }
     const ext = path.extname(filePath);
-    res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
+    // index.html 绝不缓存（否则用户拿到旧 HTML、仍指向旧 JS）；带 hash 的 assets 长期缓存。
+    const headers = { 'Content-Type': MIME[ext] || 'application/octet-stream' };
+    if (ext === '.html') {
+        headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+    } else if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+        headers['Cache-Control'] = 'public, max-age=31536000, immutable';
+    }
+    res.writeHead(200, headers);
     fs.createReadStream(filePath).pipe(res);
 }
 

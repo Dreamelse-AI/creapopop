@@ -136,10 +136,6 @@ function IntroPreview() {
   )
 }
 
-function PlaceholderTab({ text }: { text: string }) {
-  return <div className="flex h-full items-center justify-center text-sm text-black/40">{text}</div>
-}
-
 function DynamicsPreview() {
   const data = useDraftStore((s) => s.data)!
   const dynamics = [...data.dynamics].sort((a, b) => b.createdAt - a.createdAt)
