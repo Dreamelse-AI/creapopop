@@ -20,13 +20,15 @@ export function CreationListPage() {
   const drafts = useQuery({
     queryKey: ['characters', 'draft'],
     queryFn: () => listCharacters('draft'),
-    staleTime: 30_000,
+    staleTime: 0,
+    refetchOnMount: 'always',
     placeholderData: (prev) => prev,
   })
   const published = useQuery({
     queryKey: ['characters', 'published'],
     queryFn: () => listCharacters('published'),
-    staleTime: 30_000,
+    staleTime: 0,
+    refetchOnMount: 'always',
     placeholderData: (prev) => prev,
   })
 
@@ -49,6 +51,9 @@ export function CreationListPage() {
   const publishMut = useMutation({
     mutationFn: (id: string) => publishCharacter(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['characters'] }),
+    onError: (e) => {
+      alert(`发布失败：${e instanceof Error ? e.message : '请稍后重试'}`)
+    },
   })
 
   const isLoading = drafts.isLoading || published.isLoading
@@ -120,7 +125,7 @@ export function CreationListPage() {
                 <button
                   onClick={() => createMut.mutate()}
                   disabled={createMut.isPending}
-                  className="flex h-[268px] w-[358px] shrink-0 items-center justify-center rounded-[20px] border border-dashed border-black/15 bg-white/60 transition hover:bg-white disabled:opacity-50"
+                  className="flex h-[268px] w-[358px] shrink-0 items-center justify-center rounded-[20px] bg-black/[0.03] transition hover:bg-black/[0.06] disabled:opacity-50"
                   title="新建角色"
                 >
                   {createMut.isPending ? (
