@@ -87,9 +87,18 @@ export function AllCharactersPage() {
                 key={c.id}
                 character={c}
                 variant={tab}
-                onEdit={() => navigate(`/character/${c.id}`)}
+                onOpen={
+                  tab === 'draft'
+                    ? () => navigate(`/character/${c.id}`)
+                    : () => navigate(`/character/${c.id}/page`)
+                }
+                onEdit={
+                  tab === 'draft'
+                    ? () => navigate(`/character/${c.id}`)
+                    : () => navigate(`/character/${c.id}?tab=basic`)
+                }
                 onPublish={tab === 'draft' ? () => publishMut.mutate(c.id) : undefined}
-                onDynamic={tab === 'published' ? () => navigate(`/character/${c.id}`) : undefined}
+                onDynamic={tab === 'published' ? () => navigate(`/character/${c.id}?tab=dynamicNew`) : undefined}
                 onDelete={() => deleteMut.mutate(c.id)}
                 publishing={publishMut.isPending && publishMut.variables === c.id}
                 deleting={deleteMut.isPending && deleteMut.variables === c.id}

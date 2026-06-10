@@ -61,10 +61,11 @@ export function CreationListPage() {
     <div className="flex h-full flex-col overflow-hidden bg-[#f7f7f7]">
       <TopNav />
 
-      <main className="min-h-0 flex-1 overflow-y-auto px-5 pb-[30px] pt-2">
+      <main className="min-h-0 flex-1 overflow-y-auto pb-[30px] pt-2">
         {isLoading && <CenterHint text="加载中…" />}
 
         {isError && (
+          <div className="px-10">
           <CenterState
             title="加载失败"
             desc={drafts.error?.message || published.error?.message || '网络异常，请重试'}
@@ -79,6 +80,7 @@ export function CreationListPage() {
               </PillButton>
             }
           />
+          </div>
         )}
 
         {isEmpty && (
@@ -103,7 +105,7 @@ export function CreationListPage() {
           <div className="flex w-full flex-col gap-10">
             {/* 草稿箱 */}
             <section className="flex flex-col gap-2">
-              <div className="flex items-center justify-between px-3 py-1.5">
+              <div className="flex items-center justify-between px-10 py-1.5">
                 <h2 className="font-misans text-[16px] text-black/30">草稿箱 {draftList.length}</h2>
                 {draftList.length > 3 && (
                   <button
@@ -114,24 +116,25 @@ export function CreationListPage() {
                   </button>
                 )}
               </div>
-              <div className="flex gap-4 overflow-x-auto pb-2">
+              <div className="flex gap-4 overflow-x-auto px-10 pb-2">
                 <button
                   onClick={() => createMut.mutate()}
                   disabled={createMut.isPending}
-                  className="flex h-[268px] w-[358px] shrink-0 flex-col items-center justify-center gap-2 rounded-[20px] border border-dashed border-black/15 bg-white/60 text-black/40 transition hover:bg-white disabled:opacity-50"
+                  className="flex h-[268px] w-[358px] shrink-0 items-center justify-center rounded-[20px] border border-dashed border-black/15 bg-white/60 transition hover:bg-white disabled:opacity-50"
+                  title="新建角色"
                 >
                   {createMut.isPending ? (
                     <Spinner size={28} className="text-black/30" />
                   ) : (
-                    <span className="text-4xl font-light">+</span>
+                    <img src="/assets/icon-plus.svg" alt="新建角色" className="size-10" />
                   )}
-                  <span className="font-misans text-[16px]">{createMut.isPending ? '创建中…' : '新建角色'}</span>
                 </button>
                 {draftList.map((c) => (
                   <CharacterCard
                     key={c.id}
                     character={c}
                     variant="draft"
+                    onOpen={() => navigate(`/character/${c.id}`)}
                     onEdit={() => navigate(`/character/${c.id}`)}
                     onPublish={() => publishMut.mutate(c.id)}
                     onDelete={() => deleteMut.mutate(c.id)}
@@ -144,7 +147,7 @@ export function CreationListPage() {
 
             {/* 已发布 */}
             <section className="flex flex-col gap-2">
-              <div className="flex items-center justify-between px-3 py-1.5">
+              <div className="flex items-center justify-between px-10 py-1.5">
                 <h2 className="font-misans text-[16px] text-black/30">已发布 {publishedList.length}</h2>
                 {publishedList.length > 3 && (
                   <button
@@ -156,16 +159,17 @@ export function CreationListPage() {
                 )}
               </div>
               {publishedList.length === 0 ? (
-                <p className="font-misans px-3 text-[14px] text-black/30">还没有发布的角色</p>
+                <p className="font-misans px-10 text-[14px] text-black/30">还没有发布的角色</p>
               ) : (
-                <div className="flex gap-4 overflow-x-auto pb-2">
+                <div className="flex gap-4 overflow-x-auto px-10 pb-2">
                   {publishedList.map((c) => (
                     <CharacterCard
                       key={c.id}
                       character={c}
                       variant="published"
-                      onEdit={() => navigate(`/character/${c.id}`)}
-                      onDynamic={() => navigate(`/character/${c.id}`)}
+                      onOpen={() => navigate(`/character/${c.id}/page`)}
+                      onEdit={() => navigate(`/character/${c.id}?tab=basic`)}
+                      onDynamic={() => navigate(`/character/${c.id}?tab=dynamicNew`)}
                       onDelete={() => deleteMut.mutate(c.id)}
                       deleting={deleteMut.isPending && deleteMut.variables === c.id}
                     />

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useDraftStore } from '@/store/draftStore'
 import { saveCharacter } from '@/services/characterApi'
 import type { Character } from '@/types/character'
@@ -10,6 +11,7 @@ const DEBOUNCE_MS = 1200
 export function useAutoSave() {
   const data = useDraftStore((s) => s.data)
   const setSaveStatus = useDraftStore((s) => s.setSaveStatus)
+  const qc = useQueryClient()
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastSaved = useRef<string>('')
   const skipNext = useRef(true)
@@ -33,6 +35,8 @@ export function useAutoSave() {
         await saveCharacter(data)
         lastSaved.current = snapshot
         setSaveStatus('saved')
+        // 失效列表缓存：基础形象等变更后，返回首页卡片外显图即时更新
+        qc.invalidateQueries({ queryKey: ['characters'] })
       } catch {
         setSaveStatus('error')
       }
@@ -41,7 +45,7 @@ export function useAutoSave() {
     return () => {
       if (timer.current) clearTimeout(timer.current)
     }
-  }, [data, setSaveStatus])
+  }, [data, setSaveStatus, qc])
 }
 
 // 去掉每次都会变的字段，避免无意义保存
