@@ -153,7 +153,7 @@ function EmptyCoverPattern() {
       <img
         src="/assets/card-empty-pattern.svg"
         alt=""
-        className="pointer-events-none absolute left-[-39px] top-[71px] h-[288px] w-[480px] opacity-[0.04]"
+        className="pointer-events-none absolute left-[-19px] top-[71px] h-[576px] w-[960px] opacity-[0.04]"
       />
     </div>
   )
