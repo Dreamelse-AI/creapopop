@@ -42,6 +42,68 @@ function extractAnthropicText(json: unknown): string {
     .trim()
 }
 
+// 介绍页风格「对话」：用户在输入框里和模型沟通需求，模型整理出
+// 一段回复（气泡展示）、风格关键词（顶部 chips）、以及一份用于后续生成 HTML 的风格说明 styleBrief。
+// 这一步不产出 HTML —— HTML 只在用户点「生成」时才产出。
+export interface IntroStyleTurn {
+  reply: string
+  keywords: string[]
+  styleBrief: string
+}
+
+export interface IntroChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export async function chatIntroStyle(
+  character: Character,
+  history: IntroChatMessage[],
+): Promise<IntroStyleTurn> {
+  const charContext = buildCharacterContext(character)
+  const system = [
+    '你是一名资深 UI 设计顾问，正在和用户沟通「角色介绍页」的视觉风格。',
+    '用户会用自然语言描述想要的效果，你需要：',
+    '1. 用一句话友好地回应并复述你的理解（中文，简洁，不要寒暄套话）；',
+    '2. 提炼 3~5 个「UI 视觉风格」关键词（如 暗黑、哥特、冷色、极简、赛博）；',
+    '3. 整理一份给「生成模型」用的风格说明 styleBrief，描述配色、排版、氛围、重点元素。',
+    '严格只输出一个 JSON 对象，不要 markdown 代码块、不要多余文字：',
+    '{ "reply": "...", "keywords": ["..."], "styleBrief": "..." }',
+    '',
+    '角色信息（供你理解，不要直接念出来）：',
+    charContext,
+  ].join('\n')
+
+  const res = await fetch(apiUrl('/api/ai/chat'), {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({
+      model: 'gemini-2.5-flash',
+      system,
+      messages: history.map((m) => ({ role: m.role, content: m.content })),
+      temperature: 0.7,
+    }),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(json.error || `对话失败 (${res.status})`)
+  const raw = (json.text || '').trim()
+  const jsonText = stripJsonFence(raw)
+  try {
+    const obj = JSON.parse(jsonText) as { reply?: unknown; keywords?: unknown; styleBrief?: unknown }
+    const keywords = Array.isArray(obj.keywords)
+      ? obj.keywords.filter((k): k is string => typeof k === 'string').slice(0, 6)
+      : []
+    return {
+      reply: typeof obj.reply === 'string' && obj.reply.trim() ? obj.reply.trim() : '好的，我记下了。',
+      keywords,
+      styleBrief: typeof obj.styleBrief === 'string' ? obj.styleBrief.trim() : '',
+    }
+  } catch {
+    // 解析失败：把整段文本当作回复，关键词留空
+    return { reply: raw || '好的，我记下了。', keywords: [], styleBrief: raw }
+  }
+}
+
 // 基于角色信息 + vibe 提示词，用 Claude 生成介绍页。
 // 返回 { keywords, html }：keywords 为模型根据本次描述提炼的 UI 风格关键词（顶部 chips 展示）。
 export interface IntroPageResult {
