@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { useDraftStore } from '@/store/draftStore'
 import { uploadImage } from '@/services/upload'
 import { listMusic } from '@/services/mockData'
+import { Spinner } from '@/components/ui/primitives'
 import type { CharacterDynamic } from '@/types/character'
 
 const MAX_DYNAMIC_IMAGES = 9
@@ -94,7 +95,10 @@ export function DynamicSection() {
               className="flex size-[138px] shrink-0 items-center justify-center rounded-[16px] border border-dashed border-black/[0.12] bg-black/[0.02] transition hover:bg-black/[0.04] disabled:opacity-40"
             >
               {uploading ? (
-                <span className="font-misans text-[14px] text-black/30">上传中…</span>
+                <div className="flex flex-col items-center gap-1">
+                  <Spinner size={20} className="text-black/30" />
+                  <span className="font-misans text-[12px] text-black/30">上传中…</span>
+                </div>
               ) : (
                 <div className="flex flex-col items-center gap-1">
                   <img src="/assets/icon-plus.svg" alt="添加" className="size-6 opacity-30" />
@@ -134,8 +138,9 @@ export function DynamicSection() {
       <button
         onClick={publish}
         disabled={!canPublish || publishing}
-        className="flex h-[60px] w-full items-center justify-center rounded-[20px] bg-black font-misans-semibold text-[18px] text-white transition hover:opacity-90 disabled:opacity-30"
+        className="flex h-[60px] w-full items-center justify-center gap-2 rounded-[20px] bg-black font-misans-semibold text-[18px] text-white transition hover:opacity-90 disabled:opacity-30"
       >
+        {publishing && <Spinner size={18} className="text-white" />}
         {publishing ? '发布中…' : '发布'}
       </button>
 
@@ -199,8 +204,9 @@ function MusicPicker({
           <button
             onClick={loadMusic}
             disabled={loading}
-            className="font-misans-medium text-[14px] text-black/40 hover:text-black/70"
+            className="flex items-center gap-1.5 font-misans-medium text-[14px] text-black/40 hover:text-black/70"
           >
+            {loading && <Spinner size={12} className="text-black/40" />}
             {loading ? '加载中…' : '添加背景音乐（可选）'}
           </button>
         )}

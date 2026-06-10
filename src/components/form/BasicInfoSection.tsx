@@ -12,7 +12,7 @@ import {
   MAX_PERSONALITY_LEN,
 } from '@/data/constants'
 import type { Gender, Species, Visibility } from '@/types/character'
-import { SectionTitle } from '@/components/ui/primitives'
+import { SectionTitle, Spinner } from '@/components/ui/primitives'
 
 // 基本信息表单 — 严格对齐 Figma 框架（卡片式字段，点击触发交互），尺寸弹性。
 export function BasicInfoSection() {
@@ -216,7 +216,7 @@ function GenderCard({ value, onChange }: { value: Gender; onChange: (v: Gender) 
 function VoiceCard({ value, onChange }: { value: string | null; onChange: (id: string) => void }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
-  const { data } = useQuery({ queryKey: ['voices'], queryFn: listVoices })
+  const { data, isLoading } = useQuery({ queryKey: ['voices'], queryFn: listVoices })
   const voices = data?.voices ?? []
   const current = voices.find((v) => v.id === value)
 
@@ -244,18 +244,27 @@ function VoiceCard({ value, onChange }: { value: string | null; onChange: (id: s
       </button>
       {open && (
         <div className="absolute z-20 mt-1 max-h-[260px] w-full overflow-auto rounded-[16px] border border-black/[0.06] bg-white p-2 shadow-lg">
-          {voices.map((v) => (
-            <button
-              key={v.id}
-              onClick={() => {
-                onChange(v.id)
-                setOpen(false)
-              }}
-              className="font-misans-medium flex w-full items-center gap-2 rounded-[12px] px-3 py-2 text-[16px] hover:bg-black/[0.04]"
-            >
-              🔊 {v.name}
-            </button>
-          ))}
+          {isLoading ? (
+            <div className="flex items-center justify-center gap-2 py-6 text-black/30">
+              <Spinner size={18} className="text-black/30" />
+              <span className="font-misans text-[14px]">加载中…</span>
+            </div>
+          ) : voices.length === 0 ? (
+            <p className="py-6 text-center font-misans text-[14px] text-black/30">暂无音色</p>
+          ) : (
+            voices.map((v) => (
+              <button
+                key={v.id}
+                onClick={() => {
+                  onChange(v.id)
+                  setOpen(false)
+                }}
+                className="font-misans-medium flex w-full items-center gap-2 rounded-[12px] px-3 py-2 text-[16px] hover:bg-black/[0.04]"
+              >
+                🔊 {v.name}
+              </button>
+            ))
+          )}
         </div>
       )}
     </div>

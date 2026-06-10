@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/features/auth/authStore'
+import { Spinner } from '@/components/ui/primitives'
 
 interface LocationState {
   from?: string
@@ -109,7 +110,16 @@ export function LoginPage() {
                 }`}
               >
                 <span className="font-misans-bold text-[16px] whitespace-nowrap text-black">
-                  {countdown > 0 ? `${countdown}s` : sending ? '发送中' : '发送验证码'}
+                  {countdown > 0 ? (
+                    `${countdown}s`
+                  ) : sending ? (
+                    <span className="flex items-center gap-1.5">
+                      <Spinner size={14} />
+                      发送中
+                    </span>
+                  ) : (
+                    '发送验证码'
+                  )}
                 </span>
               </button>
             </div>
@@ -126,7 +136,14 @@ export function LoginPage() {
             className="flex h-[60px] min-w-px flex-1 items-center justify-center gap-1 rounded-[20px] bg-black px-5 py-4 transition hover:opacity-90 disabled:opacity-40"
           >
             <span className="font-misans-semibold text-[18px] leading-6 text-white">
-              {loading ? '登录中…' : '登录'}
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <Spinner size={18} />
+                  登录中…
+                </span>
+              ) : (
+                '登录'
+              )}
             </span>
           </button>
         </div>

@@ -4,6 +4,7 @@ import { DETAIL_FIELDS } from '@/data/constants'
 import { SandboxHtml } from './SandboxHtml'
 import { sendChatMessage, type ChatMessage } from '@/services/aiChat'
 import type { MessageItem } from '@/prompts/types'
+import { Spinner } from '@/components/ui/primitives'
 
 type PreviewTab = 'intro' | 'chat' | 'dynamics'
 
@@ -276,7 +277,12 @@ function ChatPreview() {
           ),
         )}
 
-        {loading && <p className="px-4 font-misans text-[14px] text-black/40">对方正在输入…</p>}
+        {loading && (
+          <p className="flex items-center gap-2 px-4 font-misans text-[14px] text-black/40">
+            <Spinner size={14} className="text-black/40" />
+            对方正在输入…
+          </p>
+        )}
         {error && <p className="px-4 font-misans text-[14px] text-red-500">{error}</p>}
       </div>
 
