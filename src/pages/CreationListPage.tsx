@@ -51,10 +51,10 @@ export function CreationListPage() {
   const isEmpty = !isLoading && !isError && draftList.length === 0 && publishedList.length === 0
 
   return (
-    <div className="flex h-full flex-col bg-[#f7f7f7]">
+    <div className="flex h-full flex-col overflow-hidden bg-[#f7f7f7]">
       <TopNav />
 
-      <main className="flex-1 overflow-auto px-5 pb-[30px] pt-2">
+      <main className="min-h-0 flex-1 overflow-y-auto px-5 pb-[30px] pt-2">
         {isLoading && <CenterHint text="加载中…" />}
 
         {isError && (

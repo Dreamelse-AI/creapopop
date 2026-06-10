@@ -77,9 +77,9 @@ export function CharacterFormPage() {
   }
 
   return (
-    <div className="flex h-full bg-[#f7f7f7]">
+    <div className="flex h-full overflow-hidden bg-[#f7f7f7]">
       {/* 左侧导航 204px */}
-      <aside className="flex h-full w-[204px] shrink-0 flex-col border-r border-black/[0.06] bg-white">
+      <aside className="flex h-full w-[204px] shrink-0 flex-col overflow-auto border-r border-black/[0.06] bg-white">
         <div className="flex items-center gap-1 p-4 shadow-[inset_0px_-1px_0px_0px_rgba(0,0,0,0.06)]">
           <button onClick={() => navigate('/')} className="flex size-9 items-center justify-center" title="返回">
             <img src="/assets/icon-back.svg" alt="返回" className="h-2 w-3.5 rotate-90" />
@@ -119,19 +119,27 @@ export function CharacterFormPage() {
         ))}
       </aside>
 
-      {/* 中间表单区 */}
-      <main className="flex flex-1 justify-center overflow-auto px-4 pb-[30px] pt-4">
-        {active === 'basic' && <BasicInfoSection />}
-        {active === 'image' && <ImageSection />}
-        {active === 'details' && <DetailsSection />}
-        {active === 'greetings' && <GreetingsSection />}
-        {active === 'introPage' && <IntroPageSection />}
-        {active === 'dynamic' && (
-          <div className="flex w-[600px] items-center justify-center pt-20 text-black/30">
-            角色动态功能即将上线
+      {/* 中间表单区（区域内滚动，底部 30px 安全间距）。
+          介绍页是三栏满高布局，自管内部滚动，不套纵向滚动外壳。 */}
+      {active === 'introPage' ? (
+        <main className="flex min-h-0 flex-1 justify-center overflow-hidden px-4 pt-4">
+          <IntroPageSection />
+        </main>
+      ) : (
+        <main className="flex min-h-0 flex-1 justify-center overflow-y-auto px-4 pt-4">
+          <div className="pb-[30px]">
+            {active === 'basic' && <BasicInfoSection />}
+            {active === 'image' && <ImageSection />}
+            {active === 'details' && <DetailsSection />}
+            {active === 'greetings' && <GreetingsSection />}
+            {active === 'dynamic' && (
+              <div className="flex w-[600px] items-center justify-center pt-20 text-black/30">
+                角色动态功能即将上线
+              </div>
+            )}
           </div>
-        )}
-      </main>
+        </main>
+      )}
 
       {/* 右侧预览面板 */}
       <PreviewPanel />

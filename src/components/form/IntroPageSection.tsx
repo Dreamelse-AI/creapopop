@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useDraftStore } from '@/store/draftStore'
 import { INTRO_CONTENT_FIELDS, INTRO_TEMPLATES, DETAIL_FIELDS, MAX_IMAGES } from '@/data/constants'
 import { generateIntroPageHtml } from '@/services/aiIntroPage'
@@ -267,10 +267,28 @@ function AgentCard({
   onGenerate: () => void
   onClear: () => void
 }) {
-  // 附件 UI（占位）：收集用户选择的文件，展示为可移除 chip。
+  // 附件 UI（占位）：点「+」弹菜单（图片/音乐/文档），选择后收集为可移除 chip。
   // 真正「把附件内容喂给 Claude」需后端做文件解析，见 docs/SPEC.md 联调待办，本期仅前端入口。
   const fileRef = useRef<HTMLInputElement>(null)
+  const [attachAccept, setAttachAccept] = useState('image/*')
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
   const [attachments, setAttachments] = useState<File[]>([])
+
+  useEffect(() => {
+    const fn = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', fn)
+    return () => document.removeEventListener('mousedown', fn)
+  }, [])
+
+  const pickType = (accept: string) => {
+    setAttachAccept(accept)
+    setMenuOpen(false)
+    // 等 accept 应用后再触发选择
+    setTimeout(() => fileRef.current?.click(), 0)
+  }
   const addFiles = (files: FileList | null) => {
     if (!files?.length) return
     setAttachments((prev) => [...prev, ...Array.from(files)].slice(0, 10))
@@ -364,26 +382,53 @@ function AgentCard({
         )}
 
         <div className="flex items-end gap-3 p-[18px]">
-          {/* 附件入口：图片/txt/doc/pdf/音乐 */}
+          {/* 附件入口：点击弹菜单（图片 / 音乐 / 文档） */}
           <input
             ref={fileRef}
             type="file"
             multiple
-            accept="image/*,.txt,.doc,.docx,.pdf,audio/*"
+            accept={attachAccept}
             className="hidden"
             onChange={(e) => {
               addFiles(e.target.files)
               e.target.value = ''
             }}
           />
-          <button
-            onClick={() => fileRef.current?.click()}
-            disabled={generating}
-            title="添加附件（图片 / txt / doc / pdf / 音乐）"
-            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] disabled:opacity-50"
-          >
-            <img src="/assets/icon-plus.svg" alt="添加附件" className="size-5" />
-          </button>
+          <div className="relative shrink-0" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              disabled={generating}
+              title="添加附件"
+              className="flex size-8 items-center justify-center rounded-full bg-black/[0.04] disabled:opacity-50"
+            >
+              <img src="/assets/icon-plus.svg" alt="添加附件" className="size-5" />
+            </button>
+            {menuOpen && (
+              <div className="absolute bottom-[calc(100%+8px)] left-0 z-30 flex w-[160px] flex-col rounded-[16px] bg-white p-2 shadow-[0px_10px_30px_rgba(0,0,0,0.12)]">
+                <button
+                  onClick={() => pickType('image/*')}
+                  className="flex h-10 items-center gap-2 rounded-[10px] px-2 hover:bg-black/[0.04]"
+                >
+                  <img src="/assets/icon-gallery.svg" alt="" className="size-5" />
+                  <span className="font-misans-medium text-[15px] text-black">添加图片</span>
+                </button>
+                <button
+                  onClick={() => pickType('audio/*')}
+                  className="flex h-10 items-center gap-2 rounded-[10px] px-2 hover:bg-black/[0.04]"
+                >
+                  <span className="flex size-5 items-center justify-center text-[15px]">🎵</span>
+                  <span className="font-misans-medium text-[15px] text-black">添加音乐</span>
+                </button>
+                <button
+                  onClick={() => pickType('.txt,.doc,.docx,.pdf')}
+                  className="flex h-10 items-center gap-2 rounded-[10px] px-2 hover:bg-black/[0.04]"
+                >
+                  <span className="flex size-5 items-center justify-center text-[15px]">📄</span>
+                  <span className="font-misans-medium text-[15px] text-black">上传文档</span>
+                </button>
+              </div>
+            )}
+          </div>
           <textarea
             value={vibe}
             onChange={(e) => setVibe(e.target.value)}
