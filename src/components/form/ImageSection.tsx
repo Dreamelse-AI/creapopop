@@ -4,6 +4,7 @@ import { MAX_IMAGES } from '@/data/constants'
 import type { CharacterImage } from '@/types/character'
 import { generateImage } from '@/services/aiImage'
 import { uploadImage } from '@/services/upload'
+import { Spinner } from '@/components/ui/primitives'
 
 // 形象：上传/AI生图构成虚拟形象库，可设为基础形象/删除。
 // 框架对齐 Figma：头部(标题+计数+批量删除) + 138 网格(上传位弹方式菜单 + 图片悬浮操作)。
@@ -27,6 +28,7 @@ export function ImageSection() {
   const [pending, setPending] = useState<PendingGen | null>(null)
   const [genError, setGenError] = useState<string | null>(null)
   const [viewerOpen, setViewerOpen] = useState(false)
+  const [uploading, setUploading] = useState(false)
 
   const count = data.images.length
 
@@ -80,6 +82,8 @@ export function ImageSection() {
     if (!files) return
     const room = MAX_IMAGES - count
     const picked = Array.from(files).slice(0, room)
+    if (!picked.length) return
+    setUploading(true)
     const newImgs: CharacterImage[] = []
     for (const f of picked) {
       try {
@@ -89,6 +93,7 @@ export function ImageSection() {
         setGenError(e instanceof Error ? e.message : '上传失败')
       }
     }
+    setUploading(false)
     if (!newImgs.length) return
     const images = [...data.images, ...newImgs]
     patch({ images, primaryImageId: data.primaryImageId || images[0]?.id || null })
@@ -171,10 +176,18 @@ export function ImageSection() {
           <div className="relative size-[138px] shrink-0">
             <button
               onClick={() => setMethodOpen((v) => !v)}
-              className="flex size-full items-center justify-center rounded-[20px] border border-black/[0.06] bg-black/[0.03] transition hover:bg-black/[0.06]"
+              disabled={uploading}
+              className="flex size-full flex-col items-center justify-center gap-1 rounded-[20px] border border-black/[0.06] bg-black/[0.03] transition hover:bg-black/[0.06] disabled:opacity-60"
               title="添加形象"
             >
-              <img src="/assets/icon-plus.svg" alt="添加" className="size-8" />
+              {uploading ? (
+                <>
+                  <Spinner size={24} className="text-black/30" />
+                  <span className="font-misans text-[12px] text-black/30">上传中…</span>
+                </>
+              ) : (
+                <img src="/assets/icon-plus.svg" alt="添加" className="size-8" />
+              )}
             </button>
             {methodOpen && (
               <UploadMethodMenu
@@ -239,7 +252,7 @@ export function ImageSection() {
               </div>
             ) : (
               <>
-                <Spinner size={48} />
+                <Spinner size={48} className="text-white/70" />
                 <p className="font-misans text-[16px] text-white/70">生成中…</p>
               </>
             )}
@@ -298,16 +311,6 @@ export function ImageSection() {
   )
 }
 
-// 旋转 loading 图标（纯 CSS，无外部资源依赖）
-function Spinner({ size = 24 }: { size?: number }) {
-  return (
-    <span
-      className="inline-block animate-spin rounded-full border-2 border-current border-t-transparent text-black/30"
-      style={{ width: size, height: size }}
-    />
-  )
-}
-
 // 关闭图标（内联 SVG）
 function CloseIcon() {
   return (
@@ -350,7 +353,7 @@ function GeneratingTile({
       className="flex size-[138px] shrink-0 flex-col items-center justify-center gap-2 rounded-[20px] border border-black/[0.06] bg-black/[0.03] transition hover:bg-black/[0.06]"
       title="查看大图"
     >
-      <Spinner size={28} />
+      <Spinner size={28} className="text-black/30" />
       <span className="font-misans text-[12px] text-black/40">
         {status === 'queued' ? '排队中…' : '生成中…'}
       </span>

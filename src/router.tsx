@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { LoginPage } from '@/pages/LoginPage'
 import { CreationListPage } from '@/pages/CreationListPage'
+import { AllCharactersPage } from '@/pages/AllCharactersPage'
 import { CharacterFormPage } from '@/pages/CharacterFormPage'
 import { RequireAuth } from '@/features/auth/RequireAuth'
 
@@ -11,6 +12,14 @@ export const router = createBrowserRouter([
     element: (
       <RequireAuth>
         <CreationListPage />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: '/all',
+    element: (
+      <RequireAuth>
+        <AllCharactersPage />
       </RequireAuth>
     ),
   },

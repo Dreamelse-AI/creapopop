@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useDraftStore } from '@/store/draftStore'
 import { useAutoSave } from '@/hooks/useAutoSave'
 import { getCharacter, deleteCharacter } from '@/services/characterApi'
+import { Spinner } from '@/components/ui/primitives'
 import { BasicInfoSection } from '@/components/form/BasicInfoSection'
 import { ImageSection } from '@/components/form/ImageSection'
 import { DetailsSection } from '@/components/form/DetailsSection'
@@ -43,6 +44,7 @@ export function CharacterFormPage() {
   const navigate = useNavigate()
   const { data, setData, reset, saveStatus } = useDraftStore()
   const [active, setActive] = useState<SectionKey>('basic')
+  const [deleting, setDeleting] = useState(false)
 
   useAutoSave()
 
@@ -59,7 +61,12 @@ export function CharacterFormPage() {
   }, [query.data])
 
   if (query.isLoading || !data) {
-    return <div className="flex h-full items-center justify-center text-black/40">加载中…</div>
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-black/40">
+        <Spinner size={28} className="text-black/30" />
+        <span>加载中…</span>
+      </div>
+    )
   }
   if (query.isError) {
     return (
@@ -73,9 +80,15 @@ export function CharacterFormPage() {
   }
 
   const handleDelete = async () => {
+    if (deleting) return
     if (!confirm('确定删除该角色？')) return
-    await deleteCharacter(data.id)
-    navigate('/')
+    setDeleting(true)
+    try {
+      await deleteCharacter(data.id)
+      navigate('/')
+    } catch {
+      setDeleting(false)
+    }
   }
 
   return (
@@ -90,8 +103,12 @@ export function CharacterFormPage() {
             <span className="font-misans truncate text-[16px] text-black">{data.name || '未命名角色'}</span>
             <SaveIndicator status={saveStatus} />
           </div>
-          <button onClick={handleDelete} className="size-6" title="删除">
-            <img src="/assets/icon-delete-dark.svg" alt="删除" className="size-full" />
+          <button onClick={handleDelete} disabled={deleting} className="flex size-6 items-center justify-center disabled:opacity-60" title="删除">
+            {deleting ? (
+              <Spinner size={16} className="text-black/40" />
+            ) : (
+              <img src="/assets/icon-delete-dark.svg" alt="删除" className="size-full" />
+            )}
           </button>
         </div>
         {NAV_GROUPS.map((group) => (
@@ -155,5 +172,10 @@ function SaveIndicator({ status }: { status: string }) {
         : status === 'error'
           ? '保存失败'
           : '实时保存'
-  return <span className="font-misans text-[12px] text-black/30">{text}</span>
+  return (
+    <span className="font-misans flex items-center gap-1 text-[12px] text-black/30">
+      {status === 'saving' && <Spinner size={10} className="text-black/30" />}
+      {text}
+    </span>
+  )
 }

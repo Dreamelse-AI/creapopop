@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { TopNav } from '@/components/layout/TopNav'
 import { CharacterCard } from '@/components/character/CharacterCard'
-import { PillButton } from '@/components/ui/primitives'
+import { PillButton, Spinner } from '@/components/ui/primitives'
 import {
   deleteCharacter,
   listCharacters,
@@ -91,8 +91,9 @@ export function CreationListPage() {
             <button
               onClick={() => createMut.mutate()}
               disabled={createMut.isPending}
-              className="flex items-center justify-center rounded-[2000px] bg-[#fdeab3] px-6 py-3 text-2xl font-black text-black transition hover:brightness-95 disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-[2000px] bg-[#fdeab3] px-6 py-3 text-2xl font-black text-black transition hover:brightness-95 disabled:opacity-50"
             >
+              {createMut.isPending && <Spinner size={22} />}
               {createMut.isPending ? '创建中…' : '创建'}
             </button>
           </div>
@@ -119,7 +120,11 @@ export function CreationListPage() {
                   disabled={createMut.isPending}
                   className="flex h-[268px] w-[358px] shrink-0 flex-col items-center justify-center gap-2 rounded-[20px] border border-dashed border-black/15 bg-white/60 text-black/40 transition hover:bg-white disabled:opacity-50"
                 >
-                  <span className="text-4xl font-light">+</span>
+                  {createMut.isPending ? (
+                    <Spinner size={28} className="text-black/30" />
+                  ) : (
+                    <span className="text-4xl font-light">+</span>
+                  )}
                   <span className="font-misans text-[16px]">{createMut.isPending ? '创建中…' : '新建角色'}</span>
                 </button>
                 {draftList.map((c) => (
@@ -130,6 +135,8 @@ export function CreationListPage() {
                     onEdit={() => navigate(`/character/${c.id}`)}
                     onPublish={() => publishMut.mutate(c.id)}
                     onDelete={() => deleteMut.mutate(c.id)}
+                    publishing={publishMut.isPending && publishMut.variables === c.id}
+                    deleting={deleteMut.isPending && deleteMut.variables === c.id}
                   />
                 ))}
               </div>
@@ -160,6 +167,7 @@ export function CreationListPage() {
                       onEdit={() => navigate(`/character/${c.id}`)}
                       onDynamic={() => navigate(`/character/${c.id}`)}
                       onDelete={() => deleteMut.mutate(c.id)}
+                      deleting={deleteMut.isPending && deleteMut.variables === c.id}
                     />
                   ))}
                 </div>
@@ -173,7 +181,12 @@ export function CreationListPage() {
 }
 
 function CenterHint({ text }: { text: string }) {
-  return <div className="flex h-full items-center justify-center text-black/40">{text}</div>
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-3 text-black/40">
+      <Spinner size={28} className="text-black/30" />
+      <span>{text}</span>
+    </div>
+  )
 }
 
 function CenterState({

@@ -1,4 +1,5 @@
 import type { Character } from '@/types/character'
+import { Spinner } from '@/components/ui/primitives'
 
 interface CharacterCardProps {
   character: Character
@@ -7,6 +8,8 @@ interface CharacterCardProps {
   onDelete?: () => void
   onPublish?: () => void
   onDynamic?: () => void
+  publishing?: boolean
+  deleting?: boolean
 }
 
 // 编辑图标：24px 盒子内放置 16.2×17.5 字形（对齐 Figma white_icon_edit_white）。
@@ -35,6 +38,8 @@ export function CharacterCard({
   onDelete,
   onPublish,
   onDynamic,
+  publishing = false,
+  deleting = false,
 }: CharacterCardProps) {
   const cover =
     character.images.find((i) => i.id === character.primaryImageId)?.url ||
@@ -76,23 +81,27 @@ export function CharacterCard({
       {variant === 'draft' && (
         <button
           onClick={onPublish}
-          disabled={!canPublish}
+          disabled={!canPublish || publishing}
           className={`absolute bottom-3 right-3 flex h-9 items-center gap-1 rounded-[30px] py-2 pl-3 pr-4 ${
             canPublish ? 'bg-[#fdeab3]' : 'bg-[#ebebeb]'
-          }`}
+          } disabled:opacity-60`}
           title={canPublish ? '发布' : '请先填写角色名'}
         >
-          <img
-            src="/assets/icon-publish.svg"
-            alt=""
-            className={`size-4 ${canPublish ? '' : 'opacity-30'}`}
-          />
+          {publishing ? (
+            <Spinner size={16} className="text-black/50" />
+          ) : (
+            <img
+              src="/assets/icon-publish.svg"
+              alt=""
+              className={`size-4 ${canPublish ? '' : 'opacity-30'}`}
+            />
+          )}
           <span
             className={`font-misans-bold text-[14px] ${
               canPublish ? 'text-black' : 'text-black/30'
             }`}
           >
-            发布
+            {publishing ? '发布中…' : '发布'}
           </span>
         </button>
       )}
@@ -111,6 +120,13 @@ export function CharacterCard({
               <span className="font-misans-bold text-[20px] text-white">动态</span>
             </button>
           </div>
+        </div>
+      )}
+      {/* 删除中：整卡遮罩，锁定操作 */}
+      {deleting && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-white/70 backdrop-blur-[1px]">
+          <Spinner size={28} className="text-black/40" />
+          <span className="font-misans text-[14px] text-black/50">删除中…</span>
         </div>
       )}
     </div>

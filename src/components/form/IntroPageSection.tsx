@@ -4,7 +4,7 @@ import { INTRO_CONTENT_FIELDS, INTRO_TEMPLATES, DETAIL_FIELDS, MAX_IMAGES } from
 import { generateIntroPageHtml, chatIntroStyle } from '@/services/aiIntroPage'
 import type { IntroChatMessage } from '@/services/aiIntroPage'
 import { uploadImage } from '@/services/upload'
-import { SectionTitle } from '@/components/ui/primitives'
+import { SectionTitle, Spinner } from '@/components/ui/primitives'
 import type { CharacterImage, IntroTemplate } from '@/types/character'
 
 // 介绍页美化 — 严格对照设计稿 2219:8492 / 2228:13817。
@@ -342,7 +342,11 @@ function AgentCard({
             disabled={generating || chatting}
             className="flex shrink-0 items-center justify-center gap-1.5 rounded-[100px] bg-black px-6 py-2.5 disabled:opacity-40"
           >
-            <img src="/assets/intro-star.svg" alt="" className="size-5 brightness-0 invert" />
+            {generating ? (
+              <Spinner size={20} className="text-white" />
+            ) : (
+              <img src="/assets/intro-star.svg" alt="" className="size-5 brightness-0 invert" />
+            )}
             <span className="font-misans-medium text-[16px] text-white">{generating ? '生成中' : '生成'}</span>
           </button>
         </div>
@@ -385,8 +389,22 @@ function AgentCard({
             <Bubble key={i} side="right">{m.content}</Bubble>
           ),
         )}
-        {chatting && <Bubble side="left">正在整理你的需求…</Bubble>}
-        {generating && <Bubble side="left">正在生成介绍页，请稍候…</Bubble>}
+        {chatting && (
+          <Bubble side="left">
+            <span className="flex items-center gap-2">
+              <Spinner size={14} className="text-black/40" />
+              正在整理你的需求…
+            </span>
+          </Bubble>
+        )}
+        {generating && (
+          <Bubble side="left">
+            <span className="flex items-center gap-2">
+              <Spinner size={14} className="text-black/40" />
+              正在生成介绍页，请稍候…
+            </span>
+          </Bubble>
+        )}
         {hasHtml && !generating && (
           <Bubble side="left">已生成，可在右侧预览查看，或继续调整描述后再次生成。</Bubble>
         )}
