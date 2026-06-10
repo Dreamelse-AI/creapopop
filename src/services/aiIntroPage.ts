@@ -1,4 +1,4 @@
-import { apiUrl, getToken } from './apiClient'
+import { apiUrl, arcaPost, getToken } from './apiClient'
 import { DETAIL_FIELDS } from '@/data/constants'
 import type { Character } from '@/types/character'
 
@@ -118,6 +118,19 @@ export async function generateIntroPageHtml(
   const v = vibe.trim()
   if (!v) throw new Error('请先描述你想要的介绍页风格')
 
+  // 优先尝试 Arca gen_landing_page（需要已发布的 character_id）
+  if (character.id && !character.id.startsWith('draft_')) {
+    try {
+      const resp = await arcaPost<{ html: string }>('/character/gen_landing_page', {
+        character_id: character.id,
+      })
+      if (resp.html) return { keywords: [], html: resp.html }
+    } catch {
+      // Arca 不可用，fallback 到临时后端
+    }
+  }
+
+  // Fallback：临时后端 Claude 生成
   const charContext = buildCharacterContext(character)
   const imageUrls = character.images.map((i) => i.url)
   const imageBlock = imageUrls.length

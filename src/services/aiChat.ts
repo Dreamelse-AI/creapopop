@@ -1,4 +1,4 @@
-import { apiUrl, getToken } from './apiClient'
+import { apiUrl, arcaPost, getToken } from './apiClient'
 import type { Character } from '@/types/character'
 import { buildChatPrompt } from '@/prompts'
 import type { PromptLocale, MessageItem } from '@/prompts/types'
@@ -16,17 +16,10 @@ function headers() {
   return h
 }
 
-/**
- * 兼容旧调用：用新模板系统构建 system prompt
- */
 export function buildSystemPrompt(c: Character, locale: PromptLocale = 'ko'): string {
   return buildChatPrompt(c, locale)
 }
 
-/**
- * 解析模型返回的 JSON 数组为 MessageItem[]
- * 如果解析失败则回退为单条 text
- */
 export function parseAIResponse(raw: string): MessageItem[] {
   try {
     const trimmed = raw.trim()
@@ -38,11 +31,32 @@ export function parseAIResponse(raw: string): MessageItem[] {
   return [{ type: 'text', data: { content: raw } }]
 }
 
-export async function sendChatMessage(
+// ========== Arca 链路：character/chat_with_character ==========
+
+interface ArcaChatResp {
+  current_messages: { msg_type: string; text?: { text: string } }[]
+  character_messages: { msg_type: string; text?: { text: string } }[]
+}
+
+async function arcaChat(characterId: string, userText: string): Promise<string> {
+  const resp = await arcaPost<ArcaChatResp>('/character/chat_with_character', {
+    character_id: characterId,
+    chat_scene: 2,
+    messages: [{ msg_type: 'text', text: { text: userText } }],
+  })
+  const texts = (resp.character_messages || [])
+    .filter((m) => m.msg_type === 'text' && m.text?.text)
+    .map((m) => m.text!.text)
+  return texts.join('\n') || ''
+}
+
+// ========== 临时后端链路（fallback）==========
+
+async function localChat(
   character: Character,
   history: ChatMessage[],
-  locale: PromptLocale = 'ko',
-): Promise<{ text: string; items: MessageItem[] }> {
+  locale: PromptLocale,
+): Promise<string> {
   const res = await fetch(apiUrl('/api/ai/chat'), {
     method: 'POST',
     headers: headers(),
@@ -55,6 +69,29 @@ export async function sendChatMessage(
   })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(json.error || `对话失败 (${res.status})`)
-  const raw = json.text || ''
+  return json.text || ''
+}
+
+// ========== 公开 API：优先 Arca，失败 fallback 临时后端 ==========
+
+export async function sendChatMessage(
+  character: Character,
+  history: ChatMessage[],
+  locale: PromptLocale = 'ko',
+): Promise<{ text: string; items: MessageItem[] }> {
+  const lastUserMsg = [...history].reverse().find((m) => m.role === 'user')?.content || ''
+
+  // 优先 Arca（需要有效的 character_id）
+  if (character.id && lastUserMsg) {
+    try {
+      const text = await arcaChat(character.id, lastUserMsg)
+      if (text) return { text, items: parseAIResponse(text) }
+    } catch {
+      // Arca 不可用，fallback
+    }
+  }
+
+  // Fallback：临时后端 Gemini
+  const raw = await localChat(character, history, locale)
   return { text: raw, items: parseAIResponse(raw) }
 }

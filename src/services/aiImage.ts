@@ -1,4 +1,4 @@
-import { apiUrl, getToken } from './apiClient'
+import { apiUrl, arcaPost, getToken } from './apiClient'
 
 export type ImageAspect = '16:9' | '9:16' | '1:1'
 
@@ -23,6 +23,44 @@ function headers() {
   return h
 }
 
+// ========== Arca 链路：gen_appearance + task/get_status ==========
+
+interface ArcaTaskSubmitResp { task_id: string }
+interface ArcaTaskStatusResp {
+  task_id: string
+  status: string
+  result?: string
+  error_message?: string
+}
+
+async function arcaSubmitImage(prompt: string, aspect: ImageAspect): Promise<string> {
+  const resp = await arcaPost<ArcaTaskSubmitResp>('/character/gen_appearance', {
+    description: prompt,
+    style_name: aspect === '1:1' ? '写实' : '写实',
+  })
+  return resp.task_id
+}
+
+async function arcaPollTask(taskId: string): Promise<ImageTaskStatus> {
+  const resp = await arcaPost<ArcaTaskStatusResp>('/task/get_status', { task_id: taskId })
+  const s = resp.status?.toLowerCase()
+  if (s === 'ready' || s === 'done' || s === 'succeeded') {
+    let imageUrl: string | undefined
+    if (resp.result) {
+      try {
+        const r = JSON.parse(resp.result)
+        imageUrl = r.url || r.image_url || r.images?.[0]?.url
+      } catch { /* */ }
+    }
+    if (!imageUrl) return { taskId, status: 'error', error: '完成但无图片 URL' }
+    return { taskId, status: 'done', progress: 1, imageUrl }
+  }
+  if (s === 'failed') return { taskId, status: 'error', error: resp.error_message || '生成失败' }
+  return { taskId, status: 'running' }
+}
+
+// ========== 临时后端链路（fallback）==========
+
 function pickSubmitTaskId(resp: Record<string, unknown>): string | undefined {
   if (resp.id) return resp.id as string
   if (resp.task_id) return resp.task_id as string
@@ -37,20 +75,10 @@ function pickSubmitTaskId(resp: Record<string, unknown>): string | undefined {
 
 function normalizeStatus(raw?: string): ImageTaskStatus['status'] {
   switch ((raw || '').toLowerCase()) {
-    case 'submitted':
-    case 'pending':
-    case 'queued':
-      return 'queued'
-    case 'succeeded':
-    case 'completed':
-    case 'success':
-    case 'done':
-      return 'done'
-    case 'failed':
-    case 'error':
-      return 'error'
-    default:
-      return 'running'
+    case 'submitted': case 'pending': case 'queued': return 'queued'
+    case 'succeeded': case 'completed': case 'success': case 'done': return 'done'
+    case 'failed': case 'error': return 'error'
+    default: return 'running'
   }
 }
 
@@ -69,7 +97,7 @@ function pickStatus(resp: Record<string, unknown>): { status?: string; progress?
   return {}
 }
 
-async function submitTask(prompt: string, aspect: ImageAspect, referenceImages?: string[]): Promise<string> {
+async function localSubmitTask(prompt: string, aspect: ImageAspect, referenceImages?: string[]): Promise<string> {
   const body: Record<string, unknown> = {
     model: 'gpt-image-2',
     prompt,
@@ -92,7 +120,7 @@ async function submitTask(prompt: string, aspect: ImageAspect, referenceImages?:
   return taskId
 }
 
-async function pollTask(taskId: string): Promise<ImageTaskStatus> {
+async function localPollTask(taskId: string): Promise<ImageTaskStatus> {
   const res = await fetch(apiUrl(`/api/ai/image/task/${encodeURIComponent(taskId)}`), {
     headers: headers(),
   })
@@ -109,7 +137,8 @@ async function pollTask(taskId: string): Promise<ImageTaskStatus> {
   return { taskId, status, progress: typeof progress === 'number' ? progress : undefined }
 }
 
-// 提交 + 轮询直到完成/失败/超时
+// ========== 公开 API：优先 Arca，失败 fallback 临时后端 ==========
+
 export async function generateImage(opts: {
   prompt: string
   aspect?: ImageAspect
@@ -117,11 +146,21 @@ export async function generateImage(opts: {
   onUpdate?: (s: ImageTaskStatus) => void
   timeoutMs?: number
 }): Promise<ImageTaskStatus> {
-  const taskId = await submitTask(opts.prompt, opts.aspect || '9:16', opts.referenceImages)
+  const aspect = opts.aspect || '9:16'
+  let taskId: string
+  let useArca = true
+
+  try {
+    taskId = await arcaSubmitImage(opts.prompt, aspect)
+  } catch {
+    useArca = false
+    taskId = await localSubmitTask(opts.prompt, aspect, opts.referenceImages)
+  }
+
   opts.onUpdate?.({ taskId, status: 'queued' })
   const deadline = Date.now() + (opts.timeoutMs ?? 180_000)
   while (Date.now() < deadline) {
-    const s = await pollTask(taskId)
+    const s = useArca ? await arcaPollTask(taskId) : await localPollTask(taskId)
     opts.onUpdate?.(s)
     if (s.status === 'done' || s.status === 'error') return s
     await new Promise((r) => setTimeout(r, 2500))
