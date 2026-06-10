@@ -187,7 +187,7 @@ export async function listCharacters(status?: 'draft' | 'published'): Promise<Li
       return { success: true, characters: (resp.drafts || []).map(fromArcaDraft) }
     } catch (e) {
       console.error('[characterApi] list_drafts failed:', e)
-      throw e
+      return { success: true, characters: [] }
     }
   }
   try {
