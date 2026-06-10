@@ -5,6 +5,7 @@ import { useDraftStore } from '@/store/draftStore'
 import { useCreationTaskStore } from '@/store/creationTaskStore'
 import { useAutoSave } from '@/hooks/useAutoSave'
 import { getCharacter, deleteCharacter } from '@/services/characterApi'
+import { loadIntroState, saveIntroState, clearIntroState } from '@/services/introPersist'
 import { Spinner } from '@/components/ui/primitives'
 import { BasicInfoSection } from '@/components/form/BasicInfoSection'
 import { ImageSection } from '@/components/form/ImageSection'
@@ -64,10 +65,23 @@ export function CharacterFormPage() {
   })
 
   useEffect(() => {
-    if (query.data?.character) setData(query.data.character)
+    if (query.data?.character) {
+      const char = query.data.character
+      // Arca 契约不含 introPage，列表返回的是占位值；用本地持久化覆盖恢复
+      const persisted = loadIntroState(char.id)
+      const merged = persisted?.introPage
+        ? { ...char, introPage: { ...char.introPage, ...persisted.introPage } }
+        : char
+      setData(merged)
+    }
     return () => reset()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query.data])
+
+  // introPage 变化写回本地持久化（覆盖左栏勾选/模板等走 draftStore.patch 的改动）
+  useEffect(() => {
+    if (data?.id) saveIntroState(data.id, { introPage: data.introPage })
+  }, [data?.id, data?.introPage])
 
   // 进行中任务按角色作用域：切到不同角色才清空（同角色内切导航/收起预览不丢）
   useEffect(() => {
@@ -99,6 +113,7 @@ export function CharacterFormPage() {
     setDeleting(true)
     try {
       await deleteCharacter(data.id)
+      clearIntroState(data.id)
       navigate('/')
     } catch {
       setDeleting(false)

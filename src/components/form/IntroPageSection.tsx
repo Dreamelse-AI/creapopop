@@ -490,28 +490,131 @@ function AgentCard({
   )
 }
 
-// 对话气泡：left=助手(灰底，左下尾巴) / right=用户(黄底，右下尾巴)
+// 对话气泡：left=助手(灰底，左下尾巴) / right=用户(黄底，右下尾巴)。
+// 内容若是代码/JSON，则收成可点击的缩略卡片，点击弹蒙层看全文。
 function Bubble({ side, children }: { side: 'left' | 'right'; children: ReactNode }) {
   const isLeft = side === 'left'
+  const code = typeof children === 'string' ? detectCode(children) : null
+
   return (
     <div className={`flex ${isLeft ? 'justify-start' : 'justify-end'}`}>
       <div className="relative max-w-[80%]">
-        <div
-          className={`px-4 py-2.5 ${
-            isLeft
-              ? 'rounded-[24px] rounded-bl-[4px] bg-black/[0.04]'
-              : 'rounded-[24px] rounded-br-[4px] bg-[#ffe9a8]'
-          }`}
-        >
-          <p className="whitespace-pre-wrap font-misans-medium text-[16px] leading-[22px] text-black/90">
-            {children}
-          </p>
-        </div>
+        {code ? (
+          <CodeCard code={code.body} lang={code.lang} isLeft={isLeft} />
+        ) : (
+          <div
+            className={`px-4 py-2.5 ${
+              isLeft
+                ? 'rounded-[24px] rounded-bl-[4px] bg-black/[0.04]'
+                : 'rounded-[24px] rounded-br-[4px] bg-[#ffe9a8]'
+            }`}
+          >
+            <p className="whitespace-pre-wrap font-misans-medium text-[16px] leading-[22px] text-black/90">
+              {children}
+            </p>
+          </div>
+        )}
         <img
           src={isLeft ? '/assets/chat-tail-white.svg' : '/assets/chat-tail-yellow.svg'}
           alt=""
           className={`absolute bottom-0 h-[8.5px] w-[18.75px] ${isLeft ? 'left-0 opacity-40' : 'right-0'}`}
         />
+      </div>
+    </div>
+  )
+}
+
+// 识别气泡内容是否为代码块 / JSON。命中则返回语言标签与正文，用于折叠成缩略卡片。
+function detectCode(text: string): { lang: string; body: string } | null {
+  const t = text.trim()
+  const fence = t.match(/^```(\w*)\s*\n?([\s\S]*?)```$/)
+  if (fence) {
+    return { lang: fence[1] || 'code', body: fence[2].trim() }
+  }
+  // 裸 JSON（以 { 或 [ 开头、} 或 ] 结尾，且较长）
+  if (/^[[{][\s\S]*[\]}]$/.test(t) && t.length > 40) {
+    return { lang: 'json', body: t }
+  }
+  return null
+}
+
+// 代码缩略卡片：折叠展示前几行，点击弹蒙层看全文
+function CodeCard({ code, lang, isLeft }: { code: string; lang: string; isLeft: boolean }) {
+  const [open, setOpen] = useState(false)
+  const lineCount = code.split('\n').length
+  const preview = code.split('\n').slice(0, 3).join('\n')
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className={`flex w-[260px] flex-col gap-1.5 overflow-hidden p-3 text-left ${
+          isLeft
+            ? 'rounded-[24px] rounded-bl-[4px] bg-black/[0.04]'
+            : 'rounded-[24px] rounded-br-[4px] bg-[#ffe9a8]'
+        }`}
+      >
+        <span className="flex items-center justify-between">
+          <span className="rounded-[6px] bg-black/10 px-2 py-0.5 font-misans-medium text-[12px] uppercase text-black/50">
+            {lang}
+          </span>
+          <span className="font-misans text-[12px] text-black/40">{lineCount} 行 · 点击查看</span>
+        </span>
+        <pre className="max-h-[60px] overflow-hidden font-mono text-[12px] leading-[16px] text-black/55">
+          {preview}
+          {lineCount > 3 && '\n…'}
+        </pre>
+      </button>
+
+      {open && <CodeModal code={code} lang={lang} onClose={() => setOpen(false)} />}
+    </>
+  )
+}
+
+// 全屏蒙层查看代码详情
+function CodeModal({ code, lang, onClose }: { code: string; lang: string; onClose: () => void }) {
+  const [copied, setCopied] = useState(false)
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(code)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // 忽略复制失败
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6"
+      onClick={onClose}
+    >
+      <div
+        className="flex max-h-[80vh] w-full max-w-[680px] flex-col overflow-hidden rounded-[20px] bg-white"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-black/[0.06] px-5 py-3.5">
+          <span className="rounded-[6px] bg-black/10 px-2 py-0.5 font-misans-medium text-[13px] uppercase text-black/60">
+            {lang}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={copy}
+              className="rounded-[100px] bg-black/[0.06] px-3.5 py-1.5 font-misans-medium text-[14px] text-black/70 transition hover:bg-black/10"
+            >
+              {copied ? '已复制' : '复制'}
+            </button>
+            <button
+              onClick={onClose}
+              className="flex size-8 items-center justify-center rounded-full bg-black/[0.06] text-[16px] leading-none text-black/50 transition hover:bg-black/10"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+        <pre className="flex-1 overflow-auto whitespace-pre-wrap break-words p-5 font-mono text-[13px] leading-[20px] text-black/80">
+          {code}
+        </pre>
       </div>
     </div>
   )
