@@ -257,9 +257,15 @@ export async function deleteCharacter(id: string): Promise<{ success: boolean }>
 }
 
 export async function publishCharacter(id: string): Promise<SaveResp> {
-  const resp = await arcaPost<SubmitDraftResp>('/character/submit_draft', { draft_id: id })
-  return {
-    success: true,
-    character: { id: resp.character_id } as Character,
+  try {
+    const resp = await arcaPost<SubmitDraftResp>('/character/submit_draft', { draft_id: id })
+    return {
+      success: true,
+      character: { id: resp.character_id } as Character,
+    }
+  } catch (e) {
+    // 发布(submit_draft)失败：打印完整上下文便于排查后端 500
+    console.error('[publishCharacter] submit_draft failed', { draft_id: id, error: e })
+    throw e
   }
 }

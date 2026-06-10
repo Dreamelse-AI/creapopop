@@ -125,7 +125,7 @@ export function CreationListPage() {
                 <button
                   onClick={() => createMut.mutate()}
                   disabled={createMut.isPending}
-                  className="flex h-[268px] w-[358px] shrink-0 items-center justify-center rounded-[20px] bg-black/[0.03] transition hover:bg-black/[0.06] disabled:opacity-50"
+                  className="flex h-[268px] w-[358px] shrink-0 items-center justify-center rounded-[20px] border border-black/[0.06] bg-white transition hover:bg-black/[0.02] disabled:opacity-50"
                   title="新建角色"
                 >
                   {createMut.isPending ? (
