@@ -49,6 +49,12 @@ export interface Character {
   updatedAt: number
 }
 
+// 发布必填校验：基本信息（角色名）+ 至少一张形象。
+// 与表单 tab 星号、卡片发布按钮高亮共用同一判断，避免口径不一致。
+export function isPublishable(c: Pick<Character, 'name' | 'images'>): boolean {
+  return c.name.trim().length > 0 && c.images.length > 0
+}
+
 export function createEmptyCharacter(id: string, ownerEmail: string): Character {
   const now = Date.now()
   return {

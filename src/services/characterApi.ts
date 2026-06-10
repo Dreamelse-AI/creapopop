@@ -209,6 +209,21 @@ export async function getCharacter(id: string): Promise<GetResp> {
   return { success: true, character: null }
 }
 
+// 落地页取数：先查草稿（draft_id），再回退已发布列表（character_id）。
+// 已发布详情接口字段未全接，先用列表基础信息渲染封面/名字。
+export async function getCharacterForPage(id: string): Promise<GetResp> {
+  const draftResp = await getCharacter(id)
+  if (draftResp.character) return draftResp
+  try {
+    const resp = await arcaPost<ListMyCharsResp>('/character/list_my_characters', { limit: 50 })
+    const info = (resp.characters || []).find((c) => c.basic_info.character_id === id)
+    if (info) return { success: true, character: fromPublishedChar(info) }
+  } catch (e) {
+    console.error('[characterApi] getCharacterForPage published failed:', e)
+  }
+  return { success: true, character: null }
+}
+
 export async function saveCharacter(character: Partial<Character>): Promise<SaveResp> {
   const form = toArcaForm(character)
   const resp = await arcaPost<SaveDraftResp>('/character/save_draft', {

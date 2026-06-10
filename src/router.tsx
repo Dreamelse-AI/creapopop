@@ -3,6 +3,7 @@ import { LoginPage } from '@/pages/LoginPage'
 import { CreationListPage } from '@/pages/CreationListPage'
 import { AllCharactersPage } from '@/pages/AllCharactersPage'
 import { CharacterFormPage } from '@/pages/CharacterFormPage'
+import { CharacterLandingPage } from '@/pages/CharacterLandingPage'
 import { RequireAuth } from '@/features/auth/RequireAuth'
 
 export const router = createBrowserRouter([
@@ -28,6 +29,14 @@ export const router = createBrowserRouter([
     element: (
       <RequireAuth>
         <CharacterFormPage />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: '/character/:id/page',
+    element: (
+      <RequireAuth>
+        <CharacterLandingPage />
       </RequireAuth>
     ),
   },
