@@ -178,8 +178,9 @@ function DynamicsPreview() {
 
   if (dynamics.length === 0) {
     return (
-      <div className="flex size-full flex-col items-center justify-center gap-2 bg-[#091627]">
-        <p className="font-misans text-[14px] text-white/40">暂无动态</p>
+      <div className="flex size-full flex-col items-center justify-center gap-2 bg-white">
+        <p className="font-misans text-[14px] text-black/30">暂无动态</p>
+        <p className="font-misans text-[12px] text-black/20">发布动态后将在此展示</p>
       </div>
     )
   }
