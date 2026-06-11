@@ -1,5 +1,6 @@
 import { useDraftStore } from '@/store/draftStore'
 import { useCreationTaskStore } from '@/store/creationTaskStore'
+import { SectionTitle } from '@/components/ui/primitives'
 import type { CharacterDynamic } from '@/types/character'
 
 export function DynamicHistorySection() {
@@ -18,10 +19,8 @@ export function DynamicHistorySection() {
 
   if (dynamics.length === 0) {
     return (
-      <div className="flex w-[600px] flex-col gap-4">
-        <div className="flex flex-col gap-0.5 px-3 py-1.5">
-          <h2 className="font-misans-medium text-[16px] text-black/30">历史动态</h2>
-        </div>
+      <div className="flex w-[600px] flex-col gap-2">
+        <SectionTitle>历史动态</SectionTitle>
         <div className="flex flex-col items-center justify-center gap-2 py-20">
           <p className="font-misans text-[14px] text-black/30">暂无动态</p>
           <p className="font-misans text-[12px] text-black/20">
@@ -33,15 +32,15 @@ export function DynamicHistorySection() {
   }
 
   return (
-    <div className="flex w-[600px] flex-col gap-4">
-      <div className="flex flex-col gap-0.5 px-3 py-1.5">
+    <div className="flex w-[600px] flex-col gap-2">
+      <div className="flex items-center gap-1 px-3 py-1.5">
         <h2 className="font-misans-medium text-[16px] text-black/30">历史动态</h2>
-        <p className="font-misans-medium text-[14px] text-black/30">
-          共 {dynamics.length} 条动态，点击可在右侧预览
-        </p>
+        <span className="rounded-[100px] bg-black/20 px-1.5 py-0.5 font-misans-semibold text-[12px] text-white">
+          {dynamics.length}
+        </span>
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
         {dynamics.map((dyn) => (
           <DynamicCard
             key={dyn.id}
@@ -72,20 +71,44 @@ function DynamicCard({
   return (
     <button
       onClick={onSelect}
-      className={`flex gap-3 rounded-[20px] border bg-white p-4 text-left transition hover:shadow-sm ${
+      className={`flex gap-3 rounded-[20px] border bg-white p-3 text-left transition hover:shadow-sm ${
         isSelected ? 'border-black/20 shadow-sm' : 'border-black/[0.06]'
       }`}
     >
+      {/* 文案和元信息 */}
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        {dynamic.text && (
+          <p className="line-clamp-3 font-misans-medium text-[14px] leading-[20px] text-black/80">
+            {dynamic.text}
+          </p>
+        )}
+        <div className="flex items-center gap-2">
+          <span className="font-misans text-[12px] text-black/30">{dateStr}</span>
+          {dynamic.musicId && (
+            <span className="font-misans text-[12px] text-black/30">🎵</span>
+          )}
+        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete()
+          }}
+          className="self-start font-misans text-[12px] text-[#ff3c00]/60 hover:text-[#ff3c00]"
+        >
+          删除
+        </button>
+      </div>
+
       {/* 图片预览网格 */}
       {dynamic.images.length > 0 && (
-        <div className="flex shrink-0 flex-wrap gap-1" style={{ width: '138px' }}>
+        <div className="flex shrink-0 flex-wrap gap-1" style={{ width: dynamic.images.length === 1 ? '144px' : '140px' }}>
           {dynamic.images.slice(0, 4).map((url, i) => (
             <div
               key={i}
-              className="relative overflow-hidden rounded-[8px]"
+              className="relative overflow-hidden rounded-[12px]"
               style={{
-                width: dynamic.images.length === 1 ? '138px' : '66px',
-                height: dynamic.images.length === 1 ? '138px' : '66px',
+                width: dynamic.images.length === 1 ? '144px' : '66px',
+                height: dynamic.images.length === 1 ? '144px' : '66px',
               }}
             >
               <img src={url} alt="" className="size-full object-cover" />
@@ -100,30 +123,6 @@ function DynamicCard({
           ))}
         </div>
       )}
-
-      {/* 文案和元信息 */}
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
-        {dynamic.text && (
-          <p className="line-clamp-3 font-misans-medium text-[14px] leading-[20px] text-black/80">
-            {dynamic.text}
-          </p>
-        )}
-        <div className="flex items-center gap-2">
-          <span className="font-misans text-[12px] text-black/30">{dateStr}</span>
-          {dynamic.musicId && (
-            <span className="font-misans text-[12px] text-black/30">🎵 有背景音乐</span>
-          )}
-        </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            onDelete()
-          }}
-          className="self-start font-misans text-[12px] text-[#ff3c00]/60 hover:text-[#ff3c00]"
-        >
-          删除
-        </button>
-      </div>
     </button>
   )
 }
