@@ -143,13 +143,17 @@ export function CharacterFormPage() {
             <div className="px-4">
               <p className="p-3 font-misans-medium text-[14px] text-black/30">{group.title}</p>
             </div>
-            {group.items.map((item) => (
+            {group.items.map((item) => {
+              // 历史动态：无内容时置灰禁用（不进入空态页）
+              const enabled =
+                item.key === 'dynamicHistory' ? data.dynamics.length > 0 : item.enabled
+              return (
               <button
                 key={`${item.key}-${item.label}`}
-                onClick={() => item.enabled && setActive(item.key)}
-                disabled={!item.enabled}
+                onClick={() => enabled && setActive(item.key)}
+                disabled={!enabled}
                 className={`relative flex h-[60px] w-full items-center px-10 ${
-                  item.enabled ? '' : 'opacity-30'
+                  enabled ? '' : 'opacity-30'
                 }`}
               >
                 {active === item.key && (
@@ -160,7 +164,8 @@ export function CharacterFormPage() {
                   {item.required && <RequiredStar />}
                 </span>
               </button>
-            ))}
+              )
+            })}
           </div>
         ))}
       </aside>
