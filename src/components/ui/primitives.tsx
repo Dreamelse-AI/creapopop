@@ -13,7 +13,7 @@ export function Spinner({ size = 16, className = '' }: { size?: number; classNam
   )
 }
 
-// 全屏/大区域加载：🌀 80px 转圈动画，居中。用于整页/面板/预览渲染/AI生图大图等大场景。
+// 全屏/大区域加载：🌀 60px 转圈动画，居中。用于整页/面板/预览渲染/AI生图大图等大场景。
 // 只转圈、无文案。需要铺满父容器时父级给定高度即可（组件本身 h-full w-full 居中）。
 export function FullscreenLoading({ className = '' }: { className?: string }) {
   return (
@@ -22,7 +22,7 @@ export function FullscreenLoading({ className = '' }: { className?: string }) {
       aria-label="加载中"
       className={`flex h-full w-full items-center justify-center ${className}`}
     >
-      <span className="inline-block animate-spin text-[80px] leading-none">🌀</span>
+      <span className="inline-block animate-spin text-[60px] leading-none">🌀</span>
     </div>
   )
 }

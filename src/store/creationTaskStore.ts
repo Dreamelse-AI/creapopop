@@ -38,6 +38,9 @@ interface CreationTaskState {
   chatLoading: boolean
   chatError: string | null
 
+  // —— 动态预览：选中的动态 ID（历史动态列表点击后联动右侧预览） ——
+  selectedDynamicId: string | null
+
   // 切换角色作用域：同角色不动，不同角色清空所有 transient 任务态
   ensureScope: (id: string | null) => void
 
@@ -53,6 +56,9 @@ interface CreationTaskState {
 
   // 试聊
   sendChat: (text: string) => Promise<void>
+
+  // 动态预览
+  setSelectedDynamicId: (id: string | null) => void
 }
 
 const INITIAL = {
@@ -68,6 +74,7 @@ const INITIAL = {
   chatMessages: [] as ChatMessage[],
   chatLoading: false,
   chatError: null,
+  selectedDynamicId: null as string | null,
 }
 
 // 进行中任务的全局状态与执行。脱离组件生命周期：左侧导航切换/预览收起
@@ -234,6 +241,8 @@ export const useCreationTaskStore = create<CreationTaskState>((set, get) => ({
       set({ chatLoading: false })
     }
   },
+
+  setSelectedDynamicId: (id) => set({ selectedDynamicId: id }),
 }))
 
 function makeImageId() {

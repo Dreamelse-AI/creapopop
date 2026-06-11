@@ -16,7 +16,7 @@ function headers() {
   return h
 }
 
-export function buildSystemPrompt(c: Character, locale: PromptLocale = 'ko'): string {
+export function buildSystemPrompt(c: Character, locale: PromptLocale = 'zh'): string {
   return buildChatPrompt(c, locale)
 }
 
@@ -77,7 +77,7 @@ async function localChat(
 export async function sendChatMessage(
   character: Character,
   history: ChatMessage[],
-  locale: PromptLocale = 'ko',
+  locale: PromptLocale = 'zh',
 ): Promise<{ text: string; items: MessageItem[] }> {
   const lastUserMsg = [...history].reverse().find((m) => m.role === 'user')?.content || ''
 

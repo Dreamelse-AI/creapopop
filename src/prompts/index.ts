@@ -60,7 +60,7 @@ function fillTemplate(tpl: string, vars: PromptVars): string {
  * @param locale 目标语言
  * @returns 填充好的 system prompt 字符串
  */
-export function buildChatPrompt(character: Character, locale: PromptLocale = 'ko'): string {
+export function buildChatPrompt(character: Character, locale: PromptLocale = 'zh'): string {
   const tpl = templates[locale]
   if (!tpl) {
     throw new Error(`Prompt template for locale "${locale}" is not available yet`)

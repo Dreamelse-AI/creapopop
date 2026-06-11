@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useDraftStore } from '@/store/draftStore'
 import { useCreationTaskStore } from '@/store/creationTaskStore'
 import { DETAIL_FIELDS } from '@/data/constants'
@@ -20,6 +20,15 @@ const TABS: { key: PreviewTab; icon: string; label: string }[] = [
 export function PreviewPanel() {
   const [collapsed, setCollapsed] = useState(false)
   const [tab, setTab] = useState<PreviewTab>('intro')
+  const selectedDynamicId = useCreationTaskStore((s) => s.selectedDynamicId)
+
+  // 当从历史动态列表选中某条时，自动切到动态 tab 并展开预览
+  useEffect(() => {
+    if (selectedDynamicId) {
+      setTab('dynamics')
+      setCollapsed(false)
+    }
+  }, [selectedDynamicId])
 
   return (
     <div className="relative flex h-full justify-end">
@@ -88,6 +97,21 @@ function IntroPreview() {
     return <SandboxHtml html={data.introPage.customHtml} />
   }
 
+  // 空态：无封面、无名字、无简介/性格/标签等核心内容时，纯白 + 占位文字
+  const hasContent =
+    !!cover ||
+    !!data.name ||
+    !!data.intro ||
+    !!data.personality ||
+    data.tags.length > 0
+  if (!hasContent) {
+    return (
+      <div className="flex size-full flex-col items-center justify-center bg-white">
+        <p className="font-misans text-[14px] text-black/30">填写角色信息后在此预览介绍页</p>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col">
       <div className="aspect-[3/4] w-full overflow-hidden bg-[#f0f0f0]">
@@ -143,7 +167,17 @@ function DynamicsPreview() {
   const dynamics = [...data.dynamics].sort((a, b) => b.createdAt - a.createdAt)
   const cover =
     data.images.find((i) => i.id === data.primaryImageId)?.url || data.images[0]?.url || ''
+  const selectedId = useCreationTaskStore((s) => s.selectedDynamicId)
+  const setSelectedId = useCreationTaskStore((s) => s.setSelectedDynamicId)
 
+  const selectedDynamic = selectedId ? data.dynamics.find((d) => d.id === selectedId) : null
+
+  // 有选中动态 → 展示单条详情
+  if (selectedDynamic) {
+    return <DynamicDetailView dynamic={selectedDynamic} cover={cover} onBack={() => setSelectedId(null)} />
+  }
+
+  // 无选中 → feed 列表
   if (dynamics.length === 0) {
     return (
       <div className="flex size-full flex-col items-center justify-center gap-2 bg-black">
@@ -154,7 +188,6 @@ function DynamicsPreview() {
 
   return (
     <div className="flex size-full flex-col overflow-auto bg-black">
-      {/* 顶部角色头像区 */}
       <div className="flex items-center gap-2 px-4 pt-4 pb-3">
         <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10">
           {cover ? (
@@ -167,54 +200,113 @@ function DynamicsPreview() {
           {data.name || '未命名角色'}
         </span>
       </div>
-
-      {/* 动态列表 */}
       <div className="flex flex-col gap-4 px-4 pb-4">
         {dynamics.map((dyn) => (
-          <DynamicFeedItem key={dyn.id} dynamic={dyn} />
+          <button
+            key={dyn.id}
+            onClick={() => setSelectedId(dyn.id)}
+            className="flex flex-col gap-2 text-left"
+          >
+            {dyn.images.length > 0 && (
+              <div className="flex flex-wrap gap-1 overflow-hidden rounded-[12px]">
+                {dyn.images.slice(0, 4).map((url, i) => (
+                  <div
+                    key={i}
+                    className="overflow-hidden"
+                    style={{
+                      width: dyn.images.length === 1 ? '100%' : 'calc(50% - 2px)',
+                      aspectRatio: dyn.images.length === 1 ? '3/4' : '1',
+                    }}
+                  >
+                    <img src={url} alt="" className="size-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            )}
+            {dyn.text && (
+              <p className="line-clamp-2 font-misans-medium text-[13px] leading-[18px] text-white/80">
+                {dyn.text}
+              </p>
+            )}
+            <span className="font-misans text-[11px] text-white/30">
+              {formatDynDate(dyn.createdAt)}
+            </span>
+          </button>
         ))}
       </div>
     </div>
   )
 }
 
-function DynamicFeedItem({ dynamic }: { dynamic: import('@/types/character').CharacterDynamic }) {
-  const dateStr = (() => {
-    const d = new Date(dynamic.createdAt)
-    const h = d.getHours().toString().padStart(2, '0')
-    const m = d.getMinutes().toString().padStart(2, '0')
-    return `${d.getMonth() + 1}月${d.getDate()}日 ${h}:${m}`
-  })()
+function DynamicDetailView({
+  dynamic,
+  cover,
+  onBack,
+}: {
+  dynamic: import('@/types/character').CharacterDynamic
+  cover: string
+  onBack: () => void
+}) {
+  const data = useDraftStore((s) => s.data)!
 
   return (
-    <div className="flex flex-col gap-2">
-      {/* 图片网格 */}
+    <div className="flex size-full flex-col overflow-auto bg-black">
+      {/* 顶部：返回 + 角色信息 */}
+      <div className="flex items-center gap-2 px-4 pt-4 pb-3">
+        <button
+          onClick={onBack}
+          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10"
+        >
+          <img src="/assets/icon-back.svg" alt="返回" className="h-2 w-3 rotate-90 invert" />
+        </button>
+        <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10">
+          {cover ? (
+            <img src={cover} alt="" className="size-full object-cover" />
+          ) : (
+            <span className="text-[10px] text-white/40">角色</span>
+          )}
+        </div>
+        <span className="font-misans-semibold text-[14px] text-white">
+          {data.name || '未命名角色'}
+        </span>
+      </div>
+
+      {/* 图片 */}
       {dynamic.images.length > 0 && (
-        <div className="flex flex-wrap gap-1 overflow-hidden rounded-[12px]">
-          {dynamic.images.slice(0, 4).map((url, i) => (
-            <div
-              key={i}
-              className="overflow-hidden"
-              style={{
-                width: dynamic.images.length === 1 ? '100%' : 'calc(50% - 2px)',
-                aspectRatio: dynamic.images.length === 1 ? '3/4' : '1',
-              }}
-            >
-              <img src={url} alt="" className="size-full object-cover" />
+        <div className="flex flex-col gap-1 px-4">
+          {dynamic.images.map((url, i) => (
+            <div key={i} className="overflow-hidden rounded-[12px]">
+              <img src={url} alt="" className="w-full object-cover" style={{ maxHeight: '300px' }} />
             </div>
           ))}
         </div>
       )}
+
       {/* 文案 */}
       {dynamic.text && (
-        <p className="font-misans-medium text-[13px] leading-[18px] text-white/80">
+        <p className="whitespace-pre-wrap px-4 pt-3 font-misans-medium text-[14px] leading-[22px] text-white/90">
           {dynamic.text}
         </p>
       )}
-      {/* 时间 */}
-      <span className="font-misans text-[11px] text-white/30">{dateStr}</span>
+
+      {/* 时间 + 音乐 */}
+      <div className="flex items-center gap-2 px-4 pt-3 pb-4">
+        <span className="font-misans text-[12px] text-white/30">
+          {formatDynDate(dynamic.createdAt)}
+        </span>
+        {dynamic.musicId && (
+          <span className="font-misans text-[12px] text-white/30">🎵 含背景音乐</span>
+        )}
+      </div>
     </div>
   )
+}
+
+function formatDynDate(ts: number): string {
+  const d = new Date(ts)
+  const h = d.getHours().toString().padStart(2, '0')
+  const m = d.getMinutes().toString().padStart(2, '0')
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${h}:${m}`
 }
 
 // 聊天试聊：用角色设定做 system prompt，与角色多轮对话（Gemini）。
@@ -245,8 +337,6 @@ function ChatPreview() {
   return (
     <div className="flex size-full flex-col bg-[#fbf2d8]">
       <div className="flex flex-1 flex-col gap-3 overflow-auto py-4">
-        <p className="text-center font-misans text-[12px] text-black/30">昨天 23:30</p>
-
         {display.map((m, i) =>
           m.role === 'assistant' ? (
             <AssistantBubbles key={i} items={m.items} fallback={m.content} cover={cover} />
