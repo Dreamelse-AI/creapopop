@@ -62,87 +62,74 @@ export function DynamicSection() {
   }
 
   return (
-    <div className="flex w-[600px] flex-col gap-4">
-      <div className="flex flex-col gap-0.5 px-3 py-1.5">
-        <h2 className="font-misans-medium text-[16px] text-black/30">新建动态</h2>
-        <p className="font-misans-medium text-[14px] text-black/30">
-          发布动态同时也会发布角色。为角色发布图片和文案，让粉丝看到更多内容。
-        </p>
+    <div className="flex w-[600px] flex-col gap-2">
+      {/* 标题 + 计数徽标 */}
+      <div className="flex items-center gap-1 px-3 py-1.5">
+        <h2 className="font-misans-medium text-[16px] text-black/30">发布动态</h2>
+        {images.length > 0 && (
+          <span className="rounded-[100px] bg-black/20 px-1.5 py-0.5 font-misans-semibold text-[12px] text-white">
+            图片 {images.length}/{MAX_DYNAMIC_IMAGES}
+          </span>
+        )}
       </div>
 
-      {/* 图片上传区 */}
-      <div className="flex flex-col gap-3 rounded-[20px] border border-black/[0.06] bg-white p-4">
-        <div className="flex flex-wrap gap-2">
-          {images.map((url, i) => (
-            <div key={i} className="group relative size-[138px] shrink-0">
-              <img
-                src={url}
-                alt=""
-                className="size-full rounded-[16px] object-cover"
-              />
-              <button
-                onClick={() => removeImage(i)}
-                className="absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full bg-black/60 text-[12px] text-white opacity-0 transition group-hover:opacity-100"
-              >
-                ×
-              </button>
-            </div>
-          ))}
-          {images.length < MAX_DYNAMIC_IMAGES && (
+      {/* 图片网格 */}
+      <div className="flex flex-wrap content-start gap-2">
+        {images.map((url, i) => (
+          <div key={i} className="group relative size-[144px] shrink-0 rounded-[20px] border border-black/[0.06]">
+            <img src={url} alt="" className="size-full rounded-[20px] object-cover" />
             <button
-              onClick={() => fileRef.current?.click()}
-              disabled={uploading}
-              className="flex size-[138px] shrink-0 items-center justify-center rounded-[16px] border border-dashed border-black/[0.12] bg-black/[0.02] transition hover:bg-black/[0.04] disabled:opacity-40"
+              onClick={() => removeImage(i)}
+              className="absolute -right-1.5 -top-1.5 flex size-7 items-center justify-center rounded-full bg-black/70 text-[12px] text-white opacity-0 transition group-hover:opacity-100"
             >
-              {uploading ? (
-                <div className="flex flex-col items-center gap-1">
-                  <Spinner size={20} className="text-black/30" />
-                  <span className="font-misans text-[12px] text-black/30">上传中…</span>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-1">
-                  <img src="/assets/icon-plus.svg" alt="添加" className="size-6 opacity-30" />
-                  <span className="font-misans text-[12px] text-black/30">上传图片</span>
-                </div>
-              )}
+              ×
             </button>
-          )}
-        </div>
-        {images.length > 0 && (
-          <p className="font-misans text-[12px] text-black/30">
-            {images.length}/{MAX_DYNAMIC_IMAGES} 张图片
-          </p>
+          </div>
+        ))}
+        {images.length < MAX_DYNAMIC_IMAGES && (
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            className="flex size-[144px] shrink-0 items-center justify-center rounded-[20px] border border-black/[0.06] bg-white transition hover:bg-black/[0.02] disabled:opacity-40"
+          >
+            {uploading ? (
+              <Spinner size={20} className="text-black/30" />
+            ) : (
+              <img src="/assets/icon-plus.svg" alt="添加" className="size-12 opacity-30" />
+            )}
+          </button>
         )}
       </div>
 
       {/* 文案输入 */}
-      <div className="flex flex-col gap-2 rounded-[20px] border border-black/[0.06] bg-white p-4">
+      <div className="rounded-[20px] border border-black/[0.06] bg-white px-4 pb-4 pt-3">
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value.slice(0, MAX_TEXT_LENGTH))}
-          placeholder="写点什么吧，可以是角色日常、心情、自拍文案..."
-          rows={5}
-          className="w-full resize-none bg-transparent font-misans-medium text-[16px] text-black outline-none placeholder:text-black/20"
+          placeholder="캐릭터 설명을 입력해 주세요..."
+          rows={3}
+          className="w-full resize-none bg-transparent font-misans-medium text-[14px] text-black outline-none placeholder:text-black/20"
         />
-        <div className="flex items-center justify-between">
-          <span className="font-misans text-[12px] text-black/30">
-            {text.length}/{MAX_TEXT_LENGTH}
-          </span>
-        </div>
       </div>
 
-      {/* 音乐选择（简化版，展示已选 / 添加入口） */}
+      {/* 音乐选择栏 */}
       <MusicPicker musicId={musicId} onChange={setMusicId} />
 
       {/* 发布按钮 */}
-      <button
-        onClick={publish}
-        disabled={!canPublish || publishing}
-        className="flex h-[60px] w-full items-center justify-center gap-2 rounded-[20px] bg-black font-misans-semibold text-[18px] text-white transition hover:opacity-90 disabled:opacity-30"
-      >
-        {publishing && <Spinner size={18} className="text-white" />}
-        {publishing ? '发布中…' : '发布'}
-      </button>
+      <div className="flex items-end justify-center p-3">
+        <button
+          onClick={publish}
+          disabled={!canPublish || publishing}
+          className={`flex h-[60px] flex-1 items-center justify-center gap-1 rounded-[20px] bg-black px-5 py-4 transition ${
+            canPublish ? '' : 'opacity-20'
+          } disabled:pointer-events-none`}
+        >
+          {publishing && <Spinner size={18} className="text-white" />}
+          <span className="font-misans-semibold text-[18px] text-white">
+            {publishing ? '发布中…' : '发布'}
+          </span>
+        </button>
+      </div>
 
       <input
         ref={fileRef}
@@ -188,32 +175,26 @@ function MusicPicker({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-2 rounded-[20px] border border-black/[0.06] bg-white px-4 py-3">
-        <span className="text-[16px]">🎵</span>
+      <button
+        onClick={selected ? () => onChange(null) : loadMusic}
+        disabled={loading}
+        className="flex h-[60px] items-center justify-between rounded-[20px] border border-black/[0.06] bg-white px-3 backdrop-blur-[25px]"
+      >
+        <div className="flex items-center gap-1">
+          <span className="text-[16px]">🎵</span>
+          <span className="font-misans-medium text-[16px] text-black/50">
+            {loading ? '加载中…' : selected ? selected.name : '음악을 선택하세요'}
+          </span>
+        </div>
         {selected ? (
-          <div className="flex flex-1 items-center gap-2">
-            <span className="font-misans-medium text-[14px] text-black">{selected.name}</span>
-            <button
-              onClick={() => onChange(null)}
-              className="font-misans text-[12px] text-black/40 hover:text-black/70"
-            >
-              移除
-            </button>
-          </div>
+          <span className="font-misans text-[12px] text-black/30">移除</span>
         ) : (
-          <button
-            onClick={loadMusic}
-            disabled={loading}
-            className="flex items-center gap-1.5 font-misans-medium text-[14px] text-black/40 hover:text-black/70"
-          >
-            {loading && <Spinner size={12} className="text-black/40" />}
-            {loading ? '加载中…' : '添加背景音乐（可选）'}
-          </button>
+          <img src="/assets/icon-chevron-right.svg" alt="" className="size-6 opacity-50" />
         )}
-      </div>
+      </button>
 
-      {open && (
-        <div className="flex max-h-[200px] flex-col gap-1 overflow-auto rounded-[16px] border border-black/[0.06] bg-white p-3">
+      {open && !selected && (
+        <div className="flex max-h-[200px] flex-col gap-1 overflow-auto rounded-[20px] border border-black/[0.06] bg-white p-3">
           {musicList.map((m) => (
             <button
               key={m.id}
@@ -221,19 +202,12 @@ function MusicPicker({
                 onChange(m.id)
                 setOpen(false)
               }}
-              className={`flex items-center gap-2 rounded-[12px] px-3 py-2 text-left transition hover:bg-black/[0.03] ${
-                m.id === musicId ? 'bg-black/[0.05]' : ''
-              }`}
+              className="flex items-center gap-2 rounded-[12px] px-3 py-2 text-left transition hover:bg-black/[0.03]"
             >
               <span className="font-misans-medium text-[14px] text-black">{m.name}</span>
-              <span className="font-misans text-[12px] text-black/30">
-                {m.tags.join(' · ')}
-              </span>
+              <span className="font-misans text-[12px] text-black/30">{m.tags.join(' · ')}</span>
             </button>
           ))}
-          {musicList.length === 0 && (
-            <p className="py-4 text-center font-misans text-[14px] text-black/30">暂无音乐</p>
-          )}
         </div>
       )}
     </div>

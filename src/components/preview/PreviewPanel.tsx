@@ -172,35 +172,33 @@ function DynamicsPreview() {
 
   const selectedDynamic = selectedId ? data.dynamics.find((d) => d.id === selectedId) : null
 
-  // 有选中动态 → 展示单条详情
   if (selectedDynamic) {
     return <DynamicDetailView dynamic={selectedDynamic} cover={cover} onBack={() => setSelectedId(null)} />
   }
 
-  // 无选中 → feed 列表
   if (dynamics.length === 0) {
     return (
-      <div className="flex size-full flex-col items-center justify-center gap-2 bg-black">
+      <div className="flex size-full flex-col items-center justify-center gap-2 bg-[#091627]">
         <p className="font-misans text-[14px] text-white/40">暂无动态</p>
       </div>
     )
   }
 
   return (
-    <div className="flex size-full flex-col overflow-auto bg-black">
-      <div className="flex items-center gap-2 px-4 pt-4 pb-3">
-        <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10">
+    <div className="flex size-full flex-col overflow-auto bg-[#091627]">
+      <div className="flex items-center gap-2 px-3 pt-4 pb-3">
+        <div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10">
           {cover ? (
             <img src={cover} alt="" className="size-full object-cover" />
           ) : (
-            <span className="text-[12px] text-white/40">角色</span>
+            <span className="text-[10px] text-white/40">角色</span>
           )}
         </div>
-        <span className="font-misans-semibold text-[14px] text-white">
+        <span className="font-black-han text-[20px] text-white">
           {data.name || '未命名角色'}
         </span>
       </div>
-      <div className="flex flex-col gap-4 px-4 pb-4">
+      <div className="flex flex-col gap-6 px-3 pb-4">
         {dynamics.map((dyn) => (
           <button
             key={dyn.id}
@@ -208,23 +206,16 @@ function DynamicsPreview() {
             className="flex flex-col gap-2 text-left"
           >
             {dyn.images.length > 0 && (
-              <div className="flex flex-wrap gap-1 overflow-hidden rounded-[12px]">
-                {dyn.images.slice(0, 4).map((url, i) => (
-                  <div
-                    key={i}
-                    className="overflow-hidden"
-                    style={{
-                      width: dyn.images.length === 1 ? '100%' : 'calc(50% - 2px)',
-                      aspectRatio: dyn.images.length === 1 ? '3/4' : '1',
-                    }}
-                  >
-                    <img src={url} alt="" className="size-full object-cover" />
-                  </div>
-                ))}
+              <div className="w-full overflow-hidden rounded-[30px]">
+                <img
+                  src={dyn.images[0]}
+                  alt=""
+                  className="aspect-[3/4] w-full object-cover"
+                />
               </div>
             )}
             {dyn.text && (
-              <p className="line-clamp-2 font-misans-medium text-[13px] leading-[18px] text-white/80">
+              <p className="line-clamp-2 font-misans-medium text-[14px] leading-[20px] text-white/80">
                 {dyn.text}
               </p>
             )}
@@ -248,56 +239,89 @@ function DynamicDetailView({
   onBack: () => void
 }) {
   const data = useDraftStore((s) => s.data)!
+  const [imgIdx, setImgIdx] = useState(0)
+
+  const nextImg = () => setImgIdx((i) => Math.min(i + 1, dynamic.images.length - 1))
+  const prevImg = () => setImgIdx((i) => Math.max(i - 1, 0))
 
   return (
-    <div className="flex size-full flex-col overflow-auto bg-black">
-      {/* 顶部：返回 + 角色信息 */}
-      <div className="flex items-center gap-2 px-4 pt-4 pb-3">
-        <button
-          onClick={onBack}
-          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10"
-        >
-          <img src="/assets/icon-back.svg" alt="返回" className="h-2 w-3 rotate-90 invert" />
-        </button>
-        <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10">
-          {cover ? (
-            <img src={cover} alt="" className="size-full object-cover" />
-          ) : (
-            <span className="text-[10px] text-white/40">角色</span>
-          )}
-        </div>
-        <span className="font-misans-semibold text-[14px] text-white">
-          {data.name || '未命名角色'}
-        </span>
-      </div>
-
-      {/* 图片 */}
+    <div className="relative flex size-full flex-col bg-[#091627]">
+      {/* 主图区：居中 rounded-[30px] */}
       {dynamic.images.length > 0 && (
-        <div className="flex flex-col gap-1 px-4">
-          {dynamic.images.map((url, i) => (
-            <div key={i} className="overflow-hidden rounded-[12px]">
-              <img src={url} alt="" className="w-full object-cover" style={{ maxHeight: '300px' }} />
-            </div>
-          ))}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="relative h-[480px] w-[360px] overflow-hidden rounded-[30px]">
+            <img
+              src={dynamic.images[imgIdx]}
+              alt=""
+              className="size-full object-cover"
+            />
+            {dynamic.images.length > 1 && imgIdx > 0 && (
+              <button onClick={prevImg} className="absolute left-2 top-1/2 -translate-y-1/2 flex size-8 items-center justify-center rounded-full bg-black/40">
+                <img src="/assets/icon-back.svg" alt="" className="h-2 w-3 rotate-90 invert" />
+              </button>
+            )}
+            {dynamic.images.length > 1 && imgIdx < dynamic.images.length - 1 && (
+              <button onClick={nextImg} className="absolute right-2 top-1/2 -translate-y-1/2 flex size-8 items-center justify-center rounded-full bg-black/40">
+                <img src="/assets/icon-back.svg" alt="" className="h-2 w-3 -rotate-90 invert" />
+              </button>
+            )}
+          </div>
+          {/* 背景模糊层 */}
+          <img
+            src={dynamic.images[imgIdx]}
+            alt=""
+            className="pointer-events-none absolute inset-0 -z-10 size-full object-cover opacity-30 blur-[20px]"
+          />
         </div>
       )}
+
+      {/* 顶部栏：头像 + 名字 + 时间 */}
+      <div className="relative z-10 flex items-center justify-between px-3 py-1.5 pt-4">
+        <div className="flex items-center gap-1.5">
+          <div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10">
+            {cover ? (
+              <img src={cover} alt="" className="size-full object-cover" />
+            ) : (
+              <span className="text-[10px] text-white/40">角色</span>
+            )}
+          </div>
+          <span className="font-black-han text-[20px] text-white">
+            {data.name || '未命名角色'}
+          </span>
+        </div>
+        <span className="font-misans text-[12px] text-white/50">
+          {formatDynDate(dynamic.createdAt)}
+        </span>
+      </div>
 
       {/* 文案 */}
       {dynamic.text && (
-        <p className="whitespace-pre-wrap px-4 pt-3 font-misans-medium text-[14px] leading-[22px] text-white/90">
-          {dynamic.text}
-        </p>
+        <div className="relative z-10 px-3 py-1.5">
+          <p className="line-clamp-2 font-misans-medium text-[14px] leading-[20px] text-white opacity-80">
+            {dynamic.text}
+          </p>
+        </div>
       )}
 
-      {/* 时间 + 音乐 */}
-      <div className="flex items-center gap-2 px-4 pt-3 pb-4">
-        <span className="font-misans text-[12px] text-white/30">
-          {formatDynDate(dynamic.createdAt)}
-        </span>
-        {dynamic.musicId && (
-          <span className="font-misans text-[12px] text-white/30">🎵 含背景音乐</span>
-        )}
-      </div>
+      {/* 返回按钮（左上） */}
+      <button
+        onClick={onBack}
+        className="absolute left-3 top-4 z-20 flex size-9 items-center justify-center rounded-full bg-black/30"
+      >
+        <img src="/assets/icon-back.svg" alt="返回" className="h-2 w-3 rotate-90 invert" />
+      </button>
+
+      {/* 底部音乐栏 */}
+      {dynamic.musicId && (
+        <div className="absolute bottom-3 right-3 z-10 flex h-9 items-center gap-3 rounded-[100px] bg-[rgba(48,48,48,0.9)] px-2.5 py-2">
+          <div className="flex items-center gap-0.5">
+            <span className="text-[12px]">🎵</span>
+            <span className="max-w-[70px] truncate font-misans-medium text-[14px] text-white/80">
+              背景音乐
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
