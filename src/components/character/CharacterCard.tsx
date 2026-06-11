@@ -150,14 +150,19 @@ export function CharacterCard({
   )
 }
 
-// 无形象封面：设计稿图案样式（白底 + 左下角角色脸装饰图案，4% 透明）。
+// 无形象封面：设计稿图案样式（白底 + 角色脸装饰图案，4% 透明）。
+// 用 background 而非 img：放大=background-size 百分比、位移=background-position，
+// 不受 SVG preserveAspectRatio 居中影响，所见即所得，便于微调。
 function EmptyCoverPattern() {
   return (
     <div className="absolute inset-0 overflow-hidden bg-white">
-      <img
-        src="/assets/card-empty-pattern.svg"
-        alt=""
-        className="pointer-events-none absolute left-[-19px] top-[-99px] h-[1037px] w-[1728px] opacity-[0.04]"
+      <div
+        className="pointer-events-none absolute inset-0 bg-no-repeat opacity-[0.04]"
+        style={{
+          backgroundImage: "url('/assets/card-empty-pattern.svg')",
+          backgroundSize: '160% auto',
+          backgroundPosition: '30% 72%',
+        }}
       />
     </div>
   )

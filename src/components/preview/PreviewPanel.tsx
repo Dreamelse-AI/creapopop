@@ -347,10 +347,11 @@ function ChatPreview() {
   const [input, setInput] = useState('')
 
   const firstGreeting = data.greetings.filter(Boolean)[0]
-  const display: ChatMessage[] =
-    messages.length === 0 && firstGreeting
-      ? [{ role: 'assistant', content: firstGreeting, items: [{ type: 'text', data: { content: firstGreeting } }] }]
-      : messages
+  // 开场白始终作为首条角色消息置顶展示；用户发消息后也保留（不被实际对话覆盖）。
+  const greetingMsg: ChatMessage | null = firstGreeting
+    ? { role: 'assistant', content: firstGreeting, items: [{ type: 'text', data: { content: firstGreeting } }] }
+    : null
+  const display: ChatMessage[] = greetingMsg ? [greetingMsg, ...messages] : messages
 
   const send = () => {
     const text = input.trim()

@@ -81,23 +81,27 @@ export async function sendChatMessage(
 ): Promise<{ text: string; items: MessageItem[] }> {
   const lastUserMsg = [...history].reverse().find((m) => m.role === 'user')?.content || ''
 
-  // 优先 Arca（需要有效的 character_id）
-  if (character.id && lastUserMsg) {
+  // Arca 的 chat_with_character 要求角色已发布且已加好友；草稿/审核中角色调用会被
+  // 拒绝（提示"添加好友才能用"）。预览试聊本质是创作期试聊，应直接走本地 Gemini，
+  // 用角色设定即时生成 system prompt，不依赖 Arca character_id / 好友关系。
+  const canUseArca = character.status === 'published' && !!character.id && !!lastUserMsg
+
+  if (canUseArca) {
     try {
       const text = await arcaChat(character.id, lastUserMsg)
       if (text) {
         console.info('[AI试聊] ✅ 走 Arca 后端 (chat_with_character)')
         return { text, items: parseAIResponse(text) }
       }
-      console.warn('[AI试聊] ⚠️ Arca 返回空，回退临时后端 (Gemini)')
+      console.warn('[AI试聊] ⚠️ Arca 返回空，回退本地试聊 (Gemini)')
     } catch (e) {
-      console.warn('[AI试聊] ⚠️ Arca 失败，回退临时后端 (Gemini)。原因：', e)
+      console.warn('[AI试聊] ⚠️ Arca 失败，回退本地试聊 (Gemini)。原因：', e)
     }
   } else {
-    console.info('[AI试聊] ℹ️ 无 character_id 或无消息，走临时后端 (Gemini)')
+    console.info('[AI试聊] ℹ️ 草稿/未发布角色，走本地试聊 (Gemini)，无需 character_id')
   }
 
-  // Fallback：临时后端 Gemini
+  // 本地 Gemini 试聊：草稿态主链路，也是已发布角色的兜底
   const raw = await localChat(character, history, locale)
   return { text: raw, items: parseAIResponse(raw) }
 }
