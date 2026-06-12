@@ -32,6 +32,10 @@ export function parseAIResponse(raw: string): MessageItem[] {
 }
 
 // ========== Arca 链路：character/chat_with_character ==========
+// 契约(最新) ChatWithCharacterReq：
+//   character_id(必填) / chat_scene(1|2|3) / messages
+//   friendship_id(optional)：不带则开启「非好友聊天模式」（仅 debug/试聊），
+//   因此已发布角色即便未加好友也可用此接口试聊。草稿无 character_id，仍走本地 Gemini。
 
 interface ArcaChatResp {
   current_messages: { msg_type: string; text?: { text: string } }[]
@@ -42,6 +46,7 @@ async function arcaChat(characterId: string, userText: string): Promise<string> 
   const resp = await arcaPost<ArcaChatResp>('/character/chat_with_character', {
     character_id: characterId,
     chat_scene: 2,
+    // 不传 friendship_id → 非好友试聊模式
     messages: [{ msg_type: 'text', text: { text: userText } }],
   })
   const texts = (resp.character_messages || [])

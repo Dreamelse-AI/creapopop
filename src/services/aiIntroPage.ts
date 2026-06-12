@@ -142,16 +142,27 @@ export async function generateIntroPageHtml(
   if (!v) throw new Error('请先描述你想要的介绍页风格')
 
   // 优先尝试 Arca gen_landing_page
+  // 契约(最新)：POST /character/gen_landing_page
+  //   req:  { character_id?(optional), user_prompt, style_key }
+  //   resp: { url }  —— 生成好的 landing page URL（非 html 片段）
+  // 前端渲染管线吃的是 html 片段，故拿到 url 后再 fetch 回 html 喂给下游。
   if (character.id) {
     try {
-      const resp = await arcaPost<{ html: string }>('/character/gen_landing_page', {
+      const resp = await arcaPost<{ url: string }>('/character/gen_landing_page', {
         character_id: character.id,
+        user_prompt: v,
+        style_key: v,
       })
-      if (resp.html) {
-        console.info('[AI介绍页] ✅ 走 Arca 后端 (gen_landing_page)')
-        return { keywords: [], html: resp.html }
+      if (resp.url) {
+        const html = await fetch(resp.url).then((r) => (r.ok ? r.text() : '')).catch(() => '')
+        if (html) {
+          console.info('[AI介绍页] ✅ 走 Arca 后端 (gen_landing_page)')
+          return { keywords: [], html }
+        }
+        console.warn('[AI介绍页] ⚠️ gen_landing_page 返回 url 但拉取 html 失败，回退临时后端 (Claude)')
+      } else {
+        console.warn('[AI介绍页] ⚠️ Arca 返回空 url，回退临时后端 (Claude)')
       }
-      console.warn('[AI介绍页] ⚠️ Arca 返回空 html，回退临时后端 (Claude)')
     } catch (e) {
       console.warn('[AI介绍页] ⚠️ Arca 失败，回退临时后端 (Claude)。原因：', e)
     }
