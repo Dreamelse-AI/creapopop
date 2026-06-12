@@ -5,7 +5,7 @@
  * 避免浏览器直接跨域请求 i18n-api.imaginewithu.com 被 CORS 拦截。
  * 开发环境由 vite proxy 承担同样职责；本代理用于生产容器。
  *
- * 透传：method、Authorization、Content-Type、请求体、Arca 响应 status/body。
+ * 透传：method、Authorization、Content-Type、X-Language、X-Region、请求体、Arca 响应 status/body。
  */
 const https = require('https');
 const { URL } = require('url');
@@ -20,6 +20,8 @@ function handleArcaProxy(req, res, reqPath) {
     const headers = {};
     if (req.headers['authorization']) headers['authorization'] = req.headers['authorization'];
     if (req.headers['content-type']) headers['content-type'] = req.headers['content-type'];
+    if (req.headers['x-language']) headers['x-language'] = req.headers['x-language'];
+    if (req.headers['x-region']) headers['x-region'] = req.headers['x-region'];
 
     const chunks = [];
     req.on('data', (c) => chunks.push(c));

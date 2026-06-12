@@ -50,9 +50,29 @@ export function arcaUrl(path: string): string {
   return _base ? _base + ARCA_BASE + path : ARCA_BASE + path
 }
 
+// Arca 网关要求带 X-Language + X-Region（取值对齐 popop-fe src/shared/api/locale-headers.ts）。
+// X-Language: en | ja | ko | zh-Hans | zh-Hant（兜底 en）
+// X-Region:   JP | KR | CN（注意非任意 ISO 码；CN 当前 region not allowed，兜底 JP）
+function detectLanguage(): string {
+  if (typeof navigator === 'undefined') return 'en'
+  const lang = (navigator.language || 'en').toLowerCase()
+  if (lang === 'ja' || lang.startsWith('ja-')) return 'ja'
+  if (lang === 'ko' || lang.startsWith('ko-')) return 'ko'
+  if (lang === 'zh-hant' || lang.startsWith('zh-hant') || lang === 'zh-tw') return 'zh-Hant'
+  if (lang === 'zh-hans' || lang.startsWith('zh-hans') || lang === 'zh-cn' || lang === 'zh') return 'zh-Hans'
+  return 'en'
+}
+
+// 合法值 JP|KR|CN，可用 VITE_ARCA_REGION 覆盖，默认 JP
+const ARCA_REGION = (import.meta.env.VITE_ARCA_REGION as string) || 'JP'
+
 function authHeaders(): Record<string, string> {
   const token = getToken()
-  const h: Record<string, string> = { 'Content-Type': 'application/json' }
+  const h: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'X-Language': detectLanguage(),
+    'X-Region': ARCA_REGION,
+  }
   if (token) h['Authorization'] = `Bearer ${token}`
   return h
 }
