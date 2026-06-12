@@ -1,4 +1,4 @@
-import { arcaPost } from './apiClient'
+import { arcaPost, arcaGet } from './apiClient'
 import type { Character } from '@/types/character'
 
 /**
@@ -85,14 +85,22 @@ function toArcaForm(c: Partial<Character>): ArcaCharacterCreateForm {
       : undefined,
     opening_prologue: c.greetings?.length ? c.greetings : undefined,
     images: c.images?.length
-      ? c.images.map((img) => ({
-          name: '',
-          image_type: img.source === 'ai' ? 'aigc' as const : 'upload' as const,
-          url: img.url,
-          // 双写：后端 json tag 为 typo `jons:"is_main_pic"`，两个字段都带上以确保命中
-          is_main_pic: img.id === c.primaryImageId,
-          IsMainPic: img.id === c.primaryImageId,
-        }))
+      ? (() => {
+          // 后端要求至少 1 张主图。优先用 primaryImageId 命中的那张；
+          // 若未设置主图（primaryImageId 为空或未命中任何图），则默认第一张为主图。
+          const imgs = c.images!
+          const primaryIdx = imgs.findIndex((img) => img.id === c.primaryImageId)
+          const mainIdx = primaryIdx >= 0 ? primaryIdx : 0
+          return imgs.map((img, i) => ({
+            name: '',
+            image_type: img.source === 'ai' ? ('aigc' as const) : ('upload' as const),
+            url: img.url,
+            // 双写：后端 json tag 为 typo `jons:"is_main_pic"`，序列化实际回退为字段名
+            // `IsMainPic`，两个 key 都带上以确保命中。
+            is_main_pic: i === mainIdx,
+            IsMainPic: i === mainIdx,
+          }))
+        })()
       : undefined,
   }
 }
@@ -267,5 +275,34 @@ export async function publishCharacter(id: string): Promise<SaveResp> {
     // 发布(submit_draft)失败：打印完整上下文便于排查后端 500
     console.error('[publishCharacter] submit_draft failed', { draft_id: id, error: e })
     throw e
+  }
+}
+
+/**
+ * 对应 arca.api: GET /character/page_config
+ * 鉴权：jwt: Auth → Authorization: Bearer <jwt>
+ *
+ * 响应：{ code, msg, data: { genders, character_tags, setting_options, relations } }
+ * 用途：角色创建页的标签/性别/身份等选项，由后端统一下发，前端不再写死。
+ */
+export interface CharacterPageConfig {
+  genders: string[]
+  characterTags: string[]
+  relations: string[]
+}
+
+interface ArcaPageConfigResp {
+  genders?: string[]
+  character_tags?: string[]
+  setting_options?: { icon: string; content: string }[]
+  relations?: string[]
+}
+
+export async function getCharacterPageConfig(): Promise<CharacterPageConfig> {
+  const resp = await arcaGet<ArcaPageConfigResp>('/character/page_config')
+  return {
+    genders: resp.genders || [],
+    characterTags: resp.character_tags || [],
+    relations: resp.relations || [],
   }
 }

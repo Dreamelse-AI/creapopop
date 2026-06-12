@@ -63,16 +63,19 @@ export function RoundedInput({
   )
 }
 
-// 白色卡片
+// 白色卡片。radius 变体：card=16px（默认）/ field=20px（表单字段卡）
 export function Card({
   children,
   className = '',
+  radius = 'card',
 }: {
   children: ReactNode
   className?: string
+  radius?: 'card' | 'field'
 }) {
+  const r = radius === 'field' ? 'rounded-[20px]' : 'rounded-[16px]'
   return (
-    <div className={`rounded-[16px] border border-black/[0.06] bg-white ${className}`}>
+    <div className={`${r} border border-black/[0.06] bg-white ${className}`}>
       {children}
     </div>
   )

@@ -6,14 +6,14 @@ import {
   SPECIES_OPTIONS,
   GENDER_OPTIONS,
   VISIBILITY_OPTIONS,
-  PRESET_TAGS,
   MAX_TAGS,
   MAX_NAME_LEN,
   MAX_INTRO_LEN,
   MAX_PERSONALITY_LEN,
 } from '@/data/constants'
+import { getCharacterPageConfig } from '@/services/characterApi'
 import type { Gender, Species, Visibility } from '@/types/character'
-import { SectionTitle, Spinner } from '@/components/ui/primitives'
+import { SectionTitle, Spinner, Card as UICard } from '@/components/ui/primitives'
 
 // 基本信息表单 — 严格对齐 Figma 框架（卡片式字段，点击触发交互），尺寸弹性。
 export function BasicInfoSection() {
@@ -53,14 +53,12 @@ export function BasicInfoSection() {
   )
 }
 
-// 卡片外框（白底，圆角20，边框）
+// 卡片外框（复用统一 Card，radius=field 20px）
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div
-      className={`w-full rounded-[20px] border border-black/[0.06] bg-white p-3 ${className}`}
-    >
+    <UICard radius="field" className={`w-full p-3 ${className}`}>
       {children}
-    </div>
+    </UICard>
   )
 }
 
@@ -90,6 +88,14 @@ function NameCard({ value, onChange }: { value: string; onChange: (v: string) =>
 function TagsCard({ tags, onChange }: { tags: string[]; onChange: (t: string[]) => void }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+
+  // 角色标签由后端 /character/page_config 下发，不再写死前端常量
+  const { data: pageConfig, isLoading } = useQuery({
+    queryKey: ['characterPageConfig'],
+    queryFn: getCharacterPageConfig,
+    staleTime: 5 * 60 * 1000,
+  })
+  const tagOptions = pageConfig?.characterTags ?? []
 
   useEffect(() => {
     const fn = (e: MouseEvent) => {
@@ -124,20 +130,30 @@ function TagsCard({ tags, onChange }: { tags: string[]; onChange: (t: string[]) 
       </Card>
       {open && (
         <div className="absolute z-20 mt-1 flex max-h-[280px] w-full flex-wrap gap-2 overflow-auto rounded-[16px] border border-black/[0.06] bg-white p-3 shadow-lg">
-          {PRESET_TAGS.map((t) => {
-            const active = tags.includes(t)
-            return (
-              <button
-                key={t}
-                onClick={() => toggle(t)}
-                className={`font-misans-medium rounded-[100px] px-3 py-1.5 text-[14px] ${
-                  active ? 'bg-black text-white' : 'bg-black/[0.04] text-black/60 hover:bg-black/[0.08]'
-                }`}
-              >
-                {t}
-              </button>
-            )
-          })}
+          {isLoading ? (
+            <div className="flex w-full items-center justify-center py-4">
+              <Spinner size={18} className="text-black/30" />
+            </div>
+          ) : tagOptions.length === 0 ? (
+            <p className="w-full py-4 text-center font-misans text-[13px] text-black/30">
+              暂无可选标签
+            </p>
+          ) : (
+            tagOptions.map((t) => {
+              const active = tags.includes(t)
+              return (
+                <button
+                  key={t}
+                  onClick={() => toggle(t)}
+                  className={`font-misans-medium rounded-[100px] px-3 py-1.5 text-[14px] ${
+                    active ? 'bg-black text-white' : 'bg-black/[0.04] text-black/60 hover:bg-black/[0.08]'
+                  }`}
+                >
+                  {t}
+                </button>
+              )
+            })
+          )}
         </div>
       )}
     </div>
